@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquix GOV — BWSSB Command Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── SAME DESIGN TOKEN BASE as frontend ─────────────── */
+:root {
+  --bg:      #F4F2ED;
+  --surface: #FFFFFF;
+  --surf2:   #ECEAE4;
+  --surf3:   #F8F7F4;
+  --border:  #DDD9CF;
+  --border2: #C8C2B0;
+  --text:    #18170F;
+  --text2:   #565340;
+  --text3:   #9B9178;
+  --accent:  #1A6EFF;
+  --acc2:    #0D4FBD;
+  --water:   #0EA5E9;
+  --teal:    #0D9488;
+  --green:   #16A34A;
+  --amber:   #D97706;
+  --red:     #DC2626;
+  --purple:  #7C3AED;
+  --gov:     #1E3A5F;    /* government deep blue */
+  --gov2:    #2B5282;
+  --gov-dim: rgba(30,58,95,0.08);
+  --shadow:  0 1px 3px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.10),0 16px 48px rgba(0,0,0,0.07);
+  --r:12px; --rsm:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── SHELL ────────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:248px;min-height:100vh;background:var(--gov);border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.main{margin-left:248px;flex:1;min-height:100vh}
+
+/* ── GOVERNMENT SIDEBAR (dark) ──────────────────── */
+.logo-wrap{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#1A6EFF,#0EA5E9);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;box-shadow:0 3px 10px rgba(14,165,233,0.35)}
+.logo-name{font-size:17px;font-weight:800;letter-spacing:-.4px;color:#fff;line-height:1}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.gov-badge{margin-top:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:7px}
+.gov-badge-icon{font-size:14px}
+.gov-badge-text{font-size:10px;color:rgba(255,255,255,0.6);font-family:'DM Mono',monospace;letter-spacing:.4px}
+.gov-badge-text strong{color:rgba(255,255,255,0.9);display:block;font-size:11px;font-weight:500;margin-bottom:1px}
+
+.nav{padding:14px 10px;flex:1}
+.nav-label{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);padding:10px 8px 5px;margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rsm);cursor:pointer;color:rgba(255,255,255,0.55);font-size:12.5px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(26,110,255,0.25);color:#fff;font-weight:600}
+.nav-item .ni{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nbadge{margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;font-weight:600}
+.nbadge.rd{background:rgba(220,38,38,0.4);color:#fca5a5}
+.nbadge.am{background:rgba(217,119,6,0.35);color:#fcd34d}
+.nbadge.gn{background:rgba(22,163,74,0.35);color:#86efac}
+.nbadge.bl{background:rgba(26,110,255,0.35);color:#93c5fd}
+
+.sidebar-footer{padding:13px;border-top:1px solid rgba(255,255,255,0.08)}
+.sys-status{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:var(--rsm);padding:9px 11px}
+.sys-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px}
+.sys-row:last-child{margin-bottom:0}
+.sys-row strong{color:rgba(255,255,255,0.8);font-weight:600}
+.sys-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sys-dot.gn{background:#4ade80;animation:pdot 2s ease-in-out infinite}
+.sys-dot.rd{background:#f87171}
+.sys-dot.am{background:#fbbf24;animation:pdot 1.5s ease-in-out infinite}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── TOPBAR ──────────────────────────────────────── */
+.topbar{background:var(--gov);border-bottom:1px solid rgba(255,255,255,0.1);padding:0 24px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.page-title{font-size:14.5px;font-weight:700;letter-spacing:-.2px;flex:1;color:#fff}
+.page-title span{font-weight:400;color:rgba(255,255,255,0.4);font-size:13px}
+.tbar-stat{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.65)}
+.tbar-stat strong{color:#fff;margin-right:3px}
+.tbar-btn{height:33px;padding:0 13px;border-radius:var(--rsm);border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tbar-btn:hover{background:rgba(255,255,255,0.15);color:#fff}
+.tbar-btn.danger{background:rgba(220,38,38,0.25);border-color:rgba(220,38,38,0.4);color:#fca5a5}
+.tbar-btn.danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.alert-count{background:var(--red);color:#fff;font-family:'DM Mono',monospace;font-size:9.5px;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;margin-left:3px}
+
+/* ── PAGES ───────────────────────────────────────── */
+.page{display:none;padding:22px;animation:fadein .22s ease}
+.page.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── CARDS ───────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-hd{padding:15px 18px 0;display:flex;align-items:center;gap:9px;margin-bottom:13px}
+.card-title{font-size:13px;font-weight:700;letter-spacing:-.2px;flex:1}
+.card-body{padding:0 18px 18px}
+.card-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:3px 8px;border-radius:20px;font-weight:500;letter-spacing:.4px}
+
+/* ── STAT GRID ───────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 17px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.sc-gov::before{background:linear-gradient(90deg,var(--gov),var(--gov2))}
+.sc-red::before{background:linear-gradient(90deg,var(--red),#F87171)}
+.sc-amber::before{background:linear-gradient(90deg,var(--amber),#F59E0B)}
+.sc-green::before{background:linear-gradient(90deg,var(--green),#22C55E)}
+.sc-blue::before{background:linear-gradient(90deg,var(--accent),var(--water))}
+.sc-purple::before{background:linear-gradient(90deg,var(--purple),#A855F7)}
+.sc-teal::before{background:linear-gradient(90deg,var(--teal),#06B6D4)}
+.stat-icon{font-size:20px;margin-bottom:8px;display:block}
+.stat-value{font-size:26px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:3px}
+.stat-label{font-size:10.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.stat-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:5px}
+.stat-delta{font-family:'DM Mono',monospace;font-size:10px;margin-top:4px;font-weight:500}
+.stat-delta.up{color:var(--red)}.stat-delta.down{color:var(--green)}.stat-delta.ok{color:var(--teal)}
+
+/* ── GRID HELPERS ─────────────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:15px}
+.g13{display:grid;grid-template-columns:1fr 2fr;gap:15px}
+.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+
+/* ── ALERT BANNER ─────────────────────────────────── */
+.alert-banner{display:flex;align-items:center;gap:10px;padding:10px 15px;border-radius:var(--rsm);font-size:12.5px;line-height:1.5;margin-bottom:16px;border-left:4px solid}
+.alert-banner.crit{background:rgba(220,38,38,0.07);border-color:var(--red)}
+.alert-banner.warn{background:rgba(217,119,6,0.07);border-color:var(--amber)}
+.alert-banner.info{background:rgba(26,110,255,0.06);border-color:var(--accent)}
+.ab-icon{font-size:15px;flex-shrink:0}
+.ab-text{flex:1;color:var(--text2)}
+.ab-text strong{color:var(--text);font-weight:700}
+.ab-action{font-size:11.5px;font-weight:700;color:var(--accent);cursor:pointer;white-space:nowrap;text-decoration:underline}
+
+/* ── INCIDENT TABLE ───────────────────────────────── */
+.gov-table{width:100%;border-collapse:collapse}
+.gov-table th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:500;padding:7px 12px;text-align:left;border-bottom:2px solid var(--border);background:var(--surf3)}
+.gov-table td{padding:10px 12px;font-size:12.5px;border-bottom:1px solid var(--surf2);vertical-align:middle}
+.gov-table tr:last-child td{border-bottom:none}
+.gov-table tr:hover td{background:rgba(26,110,255,0.03)}
+.sev-badge{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.4px}
+.sev-badge.CRITICAL{background:rgba(220,38,38,.12);color:var(--red)}
+.sev-badge.HIGH{background:rgba(217,119,6,.12);color:var(--amber)}
+.sev-badge.MEDIUM{background:rgba(14,165,233,.12);color:var(--water)}
+.sev-badge.LOW{background:rgba(22,163,74,.12);color:var(--green)}
+.sev-badge.RESOLVED{background:rgba(22,163,74,.08);color:var(--green)}
+.act-btn{height:26px;padding:0 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .12s;margin-right:4px}
+.act-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.act-btn.danger:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+/* ── METRIC ROWS ──────────────────────────────────── */
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--surf2)}
+.mrow:last-child{border-bottom:none}
+.mkey{font-size:11.5px;color:var(--text2);font-weight:500;display:flex;align-items:center;gap:6px}
+.mval{font-family:'DM Mono',monospace;font-size:12.5px;font-weight:600;color:var(--text)}
+.mval.rd{color:var(--red)}.mval.gn{color:var(--green)}.mval.am{color:var(--amber)}.mval.bl{color:var(--accent)}
+
+/* ── ZONE STATUS CARDS ────────────────────────────── */
+.zone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.zone-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 15px;position:relative;overflow:hidden;transition:box-shadow .2s,border-color .2s;cursor:pointer}
+.zone-card:hover{box-shadow:var(--shadow-lg);border-color:var(--border2)}
+.zone-card.high{border-left:4px solid var(--red)}
+.zone-card.medium{border-left:4px solid var(--amber)}
+.zone-card.low{border-left:4px solid var(--green)}
+.zone-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.zone-loc{font-size:10.5px;color:var(--text3);margin-bottom:9px;font-family:'DM Mono',monospace}
+.zone-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-bottom:10px}
+.zm{display:flex;flex-direction:column}
+.zm-label{font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:1px}
+.zm-val{font-size:12.5px;font-weight:700;font-family:'DM Mono',monospace}
+.flow-bar{height:4px;background:var(--surf2);border-radius:3px;overflow:hidden;margin-bottom:9px}
+.flow-fill{height:100%;border-radius:3px;transition:width .8s}
+.zone-actions{display:flex;gap:5px}
+.zone-btn{flex:1;height:25px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);font-family:'Syne',sans-serif;font-size:10.5px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .12s;text-align:center}
+.zone-btn:hover{background:var(--gov);border-color:var(--gov);color:#fff}
+.zone-btn.red:hover{background:var(--red);border-color:var(--red);color:#fff}
+.leak-dot{position:absolute;top:12px;right:12px;width:9px;height:9px;border-radius:50%;background:var(--red);animation:pdot 1s ease-in-out infinite}
+
+/* ── RESOURCE DISPATCH ────────────────────────────── */
+.dispatch-queue{display:flex;flex-direction:column;gap:7px}
+.dq-item{background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 13px;display:flex;align-items:center;gap:11px}
+.dq-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.dq-icon.tanker{background:rgba(14,165,233,0.1)}
+.dq-icon.tech{background:rgba(22,163,74,0.1)}
+.dq-icon.drone{background:rgba(26,110,255,0.1)}
+.dq-icon.emergency{background:rgba(220,38,38,0.1)}
+.dq-info{flex:1}
+.dq-title{font-size:12.5px;font-weight:700;margin-bottom:2px}
+.dq-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.dq-status{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.dq-status.active{background:rgba(22,163,74,.1);color:var(--green)}
+.dq-status.enroute{background:rgba(14,165,233,.1);color:var(--water)}
+.dq-status.pending{background:rgba(217,119,6,.1);color:var(--amber)}
+.dq-status.complete{background:rgba(22,163,74,.08);color:var(--teal)}
+
+/* ── POLICY ACTIONS ───────────────────────────────── */
+.policy-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.policy-card{background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:13px 15px}
+.policy-title{font-size:12px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.policy-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:10px}
+.policy-status{font-family:'DM Mono',monospace;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px}
+.ps-active{background:rgba(22,163,74,.1);color:var(--green)}
+.ps-pending{background:rgba(217,119,6,.1);color:var(--amber)}
+.ps-draft{background:rgba(100,100,100,.1);color:var(--text3)}
+.policy-btn{width:100%;height:28px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .12s}
+.policy-btn:hover{background:var(--gov);border-color:var(--gov);color:#fff}
+
+/* ── BAR CHART ────────────────────────────────────── */
+.cbar-wrap{display:flex;flex-direction:column;gap:7px}
+.cbar-row{display:flex;align-items:center;gap:9px}
+.cbar-label{font-size:11px;width:90px;text-align:right;color:var(--text2);font-weight:500;flex-shrink:0}
+.cbar-track{flex:1;height:17px;background:var(--surf2);border-radius:3px;overflow:hidden}
+.cbar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:7px;font-family:'DM Mono',monospace;font-size:9.5px;color:#fff;font-weight:600;transition:width 1s;white-space:nowrap}
+
+/* ── AUDIT LOG ────────────────────────────────────── */
+.audit-log{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.alog-item{display:flex;gap:10px;padding:8px 10px;background:var(--surf3);border-radius:6px;align-items:flex-start;font-size:11.5px}
+.alog-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;padding-top:1px;min-width:58px}
+.alog-icon{font-size:13px;flex-shrink:0}
+.alog-msg{color:var(--text2);line-height:1.4;flex:1}
+.alog-msg strong{color:var(--text);font-weight:700}
+.alog-actor{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--accent);margin-top:2px}
+
+/* ── SDG TRACKER ──────────────────────────────────── */
+.sdg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sdg-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:13px 14px}
+.sdg-num{font-size:11px;font-weight:800;color:#fff;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;flex-shrink:0}
+.sdg-title{font-size:11.5px;font-weight:700;margin-bottom:4px}
+.sdg-metric{font-family:'DM Mono',monospace;font-size:18px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
+.sdg-label{font-size:10px;color:var(--text3);margin-bottom:7px}
+.sdg-bar-bg{height:5px;background:var(--surf2);border-radius:3px;overflow:hidden}
+.sdg-bar-fill{height:100%;border-radius:3px;transition:width 1s}
+.sdg-target{font-size:9.5px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px}
+
+/* ── COMPLAINT MANAGEMENT ─────────────────────────── */
+.comp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
+.comp-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:rgba(26,110,255,0.08)}
+.comp-body{flex:1}
+.comp-title{font-size:12.5px;font-weight:700;margin-bottom:2px}
+.comp-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px}
+.comp-priority{font-family:'DM Mono',monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-right:5px}
+.cp-high{background:rgba(220,38,38,.1);color:var(--red)}
+.cp-med{background:rgba(217,119,6,.1);color:var(--amber)}
+.cp-low{background:rgba(22,163,74,.1);color:var(--green)}
+.comp-actions{display:flex;gap:5px;margin-top:4px}
+
+/* ── DRONE FEED ───────────────────────────────────── */
+.drone-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.drone-card{background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:11px 12px;position:relative}
+.drone-id{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:3px}
+.drone-zone{font-size:12px;font-weight:700;margin-bottom:5px}
+.drone-state{font-family:'DM Mono',monospace;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:6px}
+.ds-patrol{background:rgba(26,110,255,.1);color:var(--accent)}
+.ds-converge{background:rgba(220,38,38,.12);color:var(--red)}
+.ds-inspect{background:rgba(217,119,6,.1);color:var(--amber)}
+.ds-idle{background:rgba(100,100,100,.08);color:var(--text3)}
+.drone-bat{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+.bat-bar{flex:1;height:4px;background:var(--surf2);border-radius:3px;overflow:hidden}
+.bat-fill{height:100%;border-radius:3px}
+
+/* ── CONNECTION BANNER ────────────────────────────── */
+.conn-banner{background:linear-gradient(135deg,rgba(30,58,95,0.06),rgba(14,165,233,0.05));border:1px solid rgba(30,58,95,0.2);border-radius:var(--rsm);padding:10px 15px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pdot 2s ease-in-out infinite;flex-shrink:0}
+.conn-text{font-size:11.5px;color:var(--text2);flex:1}
+.conn-text strong{color:var(--gov);font-weight:700}
+.conn-endpoint{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);background:rgba(26,110,255,0.07);padding:2px 8px;border-radius:4px}
+
+/* ── SPINNER ──────────────────────────────────────── */
+.spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;gap:8px;padding:10px 0;color:var(--text3);font-size:12px}
+
+/* ── MODAL ────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:24px;width:480px;max-width:95vw;animation:fadein .2s ease}
+.modal-title{font-size:15px;font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn{height:38px;padding:0 16px;border-radius:var(--rsm);border:none;font-family:'Syne',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--gov);color:#fff}
+.btn-p:hover{background:var(--gov2);transform:translateY(-1px)}
+.btn-d{background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.2)}
+.btn-d:hover{background:var(--red);color:#fff}
+.btn-s{background:var(--surf2);color:var(--text);border:1px solid var(--border)}
+.fi,.fs{width:100%;height:38px;padding:0 11px;border:1px solid var(--border);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s;appearance:none}
+.fi:focus,.fs:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,255,.1)}
+.fl{display:block;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.fg{margin-bottom:13px}
+.textarea{width:100%;min-height:80px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .15s;resize:vertical}
+.textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,255,.1)}
+
+/* ── SCROLLBAR ────────────────────────────────────── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:1100px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════════ SIDEBAR ══════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <a class="logo" href="#">
+      <div class="logo-icon">🏛️</div>
+      <div>
+        <div class="logo-name">Aquix GOV</div>
+        <div class="logo-sub">Command Centre</div>
+      </div>
+    </a>
+    <div class="gov-badge" style="margin-top:10px">
+      <div class="gov-badge-icon">🇮🇳</div>
+      <div class="gov-badge-text">
+        <strong>BWSSB — Karnataka</strong>
+        Government Control Panel
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-label">Command</div>
+    <button class="nav-item active" onclick="showPage('overview',this)"><span class="ni">🏠</span>Command Overview</button>
+    <button class="nav-item" onclick="showPage('zones',this)"><span class="ni">🗺️</span>Zone Control <span class="nbadge rd">3 HIGH</span></button>
+    <button class="nav-item" onclick="showPage('incidents',this)"><span class="ni">🚨</span>Incidents <span class="nbadge rd" id="nb-inc">7</span></button>
+
+    <div class="nav-label">Operations</div>
+    <button class="nav-item" onclick="showPage('dispatch',this)"><span class="ni">🚛</span>Resource Dispatch <span class="nbadge am">Pending</span></button>
+    <button class="nav-item" onclick="showPage('drones',this)"><span class="ni">🚁</span>Drone Fleet <span class="nbadge bl">8 Live</span></button>
+    <button class="nav-item" onclick="showPage('complaints',this)"><span class="ni">📋</span>Complaints Queue <span class="nbadge am" id="nb-comp">14</span></button>
+
+    <div class="nav-label">Policy & Reports</div>
+    <button class="nav-item" onclick="showPage('policy',this)"><span class="ni">⚖️</span>Policy Controls</button>
+    <button class="nav-item" onclick="showPage('sdg',this)"><span class="ni">🌍</span>SDG Tracker</button>
+    <button class="nav-item" onclick="showPage('audit',this)"><span class="ni">📜</span>Audit Log</button>
+    <button class="nav-item" onclick="showPage('reports',this)"><span class="ni">📊</span>Reports & Export</button>
+
+    <div class="nav-label">Connection</div>
+    <button class="nav-item" onclick="showPage('api',this)"><span class="ni">🔗</span>API Bridge <span class="nbadge gn">Live</span></button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sys-status">
+      <div class="sys-row"><span>Backend API</span><span><div class="sys-dot gn"></div></span></div>
+      <div class="sys-row"><span>Aquix Frontend</span><strong style="color:rgba(255,255,255,0.7)">Connected</strong></div>
+      <div class="sys-row"><span>Last sync</span><strong id="lastSync" style="color:rgba(255,255,255,0.7)">just now</strong></div>
+      <div class="sys-row"><span>Officer</span><strong style="color:rgba(255,255,255,0.7)">Admin — BWSSB</strong></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════════════════════════════ -->
+<div class="main">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="page-title" id="topbar-title">Command Overview <span>/ BWSSB Bangalore</span></div>
+  <div style="display:flex;align-items:center;gap:9px">
+    <div class="tbar-stat"><strong id="tb-leaks">7</strong> Active Leaks</div>
+    <div class="tbar-stat"><strong id="tb-comp">14</strong> Open Complaints</div>
+    <div class="tbar-stat" id="tb-time" style="font-size:10.5px">--:--:-- IST</div>
+    <button class="tbar-btn" onclick="syncFromBackend()">🔄 Sync</button>
+    <button class="tbar-btn danger" onclick="openEmergencyModal()">🚨 Emergency Alert <span class="alert-count" id="tb-alerts">3</span></button>
+  </div>
+</header>
+
+<!-- ══════════ PAGE: COMMAND OVERVIEW ════════════════════ -->
+<section class="page active" id="page-overview">
+
+  <div class="conn-banner">
+    <div class="conn-dot"></div>
+    <div class="conn-text">Connected to <strong>Aquix Backend v4.0</strong> — same data source as citizen frontend · 12 zones · 17 API endpoints active</div>
+    <div class="conn-endpoint">localhost:5000/api</div>
+  </div>
+
+  <div id="ov-alerts"></div>
+
+  <div class="stat-grid">
+    <div class="stat-card sc-red">
+      <span class="stat-icon">🚨</span>
+      <div class="stat-value" id="ov-leaks">7</div>
+      <div class="stat-label">Active Leaks</div>
+      <div class="stat-sub">4 Critical · 3 High</div>
+      <div class="stat-delta up" id="ov-leaks-d">↑ +2 since last hour</div>
+    </div>
+    <div class="stat-card sc-amber">
+      <span class="stat-icon">⚠️</span>
+      <div class="stat-value" id="ov-comp">14</div>
+      <div class="stat-label">Open Complaints</div>
+      <div class="stat-sub">Avg resolve: 3.2 days</div>
+      <div class="stat-delta up">↑ 3 new today</div>
+    </div>
+    <div class="stat-card sc-blue">
+      <span class="stat-icon">💧</span>
+      <div class="stat-value">12.4</div>
+      <div class="stat-label">Supply (MLD)</div>
+      <div class="stat-sub">Cauvery Stage 5</div>
+      <div class="stat-delta ok">→ Stable</div>
+    </div>
+    <div class="stat-card sc-purple">
+      <span class="stat-icon">📊</span>
+      <div class="stat-value">28%</div>
+      <div class="stat-label">NRW Loss</div>
+      <div class="stat-sub">Target: &lt;20%</div>
+      <div class="stat-delta up">↑ Above target</div>
+    </div>
+    <div class="stat-card sc-green">
+      <span class="stat-icon">⚖️</span>
+      <div class="stat-value">84%</div>
+      <div class="stat-label">Equity Score</div>
+      <div class="stat-sub">Distribution fairness</div>
+      <div class="stat-delta down">↑ +2% this week</div>
+    </div>
+    <div class="stat-card sc-teal">
+      <span class="stat-icon">🚁</span>
+      <div class="stat-value">8</div>
+      <div class="stat-label">Drones Active</div>
+      <div class="stat-sub">3 converging leaks</div>
+      <div class="stat-delta ok">→ All operational</div>
+    </div>
+    <div class="stat-card sc-gov">
+      <span class="stat-icon">🚛</span>
+      <div class="stat-value">42</div>
+      <div class="stat-label">Tankers Deployed</div>
+      <div class="stat-sub">6 en route now</div>
+      <div class="stat-delta ok">→ Normal</div>
+    </div>
+    <div class="stat-card sc-blue">
+      <span class="stat-icon">🏥</span>
+      <div class="stat-value">7.2</div>
+      <div class="stat-label">Water pH</div>
+      <div class="stat-sub">TDS 310 ppm — Safe</div>
+      <div class="stat-delta down">✓ WHO compliant</div>
+    </div>
+    <div class="stat-card sc-amber">
+      <span class="stat-icon">🌊</span>
+      <div class="stat-value">42%</div>
+      <div class="stat-label">Flood Risk</div>
+      <div class="stat-sub">Bangalore South</div>
+      <div class="stat-delta up">↑ MODERATE</div>
+    </div>
+    <div class="stat-card sc-green">
+      <span class="stat-icon">👥</span>
+      <div class="stat-value">3.6M</div>
+      <div class="stat-label">Pop. Served</div>
+      <div class="stat-sub">12 zones · 12 wards</div>
+      <div class="stat-delta ok">→ Full coverage</div>
+    </div>
+  </div>
+
+  <div class="g31 mb20">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🗺️ Zone Risk Summary — Live from Backend</div>
+        <span class="card-badge" style="background:rgba(30,58,95,.08);color:var(--gov)">GET /api/dashboard/zones</span>
+      </div>
+      <div class="card-body">
+        <table class="gov-table">
+          <thead><tr><th>Zone</th><th>Risk</th><th>Flow (L/s)</th><th>Pressure</th><th>Leak</th><th>Action</th></tr></thead>
+          <tbody id="ov-zone-table"><tr><td colspan="6"><div class="loading"><div class="spinner"></div>Syncing from backend…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">⚡ Quick Actions</div></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-d" style="width:100%;justify-content:center" onclick="openEmergencyModal()">🚨 Issue Emergency Alert</button>
+          <button class="btn btn-p" style="width:100%;justify-content:center" onclick="openDispatchModal()">🚛 Dispatch Tanker</button>
+          <button class="btn btn-p" style="width:100%;justify-content:center;background:var(--teal)" onclick="openShutdownModal()">🔒 Schedule Shutdown</button>
+          <button class="btn btn-s" style="width:100%;justify-content:center" onclick="showPage('drones',document.querySelector('.nav-item:nth-child(9))'))">🚁 View Drone Fleet</button>
+          <button class="btn btn-s" style="width:100%;justify-content:center" onclick="syncFromBackend()">🔄 Force Sync Frontend</button>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="card-title" style="font-size:12px;margin-bottom:10px">📡 System Channels</div>
+          <div class="mrow"><span class="mkey">Citizen Frontend</span><span class="mval gn">● Online</span></div>
+          <div class="mrow"><span class="mkey">Backend API</span><span class="mval gn">● 17 routes</span></div>
+          <div class="mrow"><span class="mkey">Aquix Drone Sim</span><span class="mval gn">● Streaming</span></div>
+          <div class="mrow"><span class="mkey">BWSSB SCADA</span><span class="mval am">● Simulated</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💧 Supply Sources</div></div>
+      <div class="card-body">
+        <div class="cbar-wrap">
+          <div class="cbar-row"><div class="cbar-label">Cauvery S5</div><div class="cbar-track"><div class="cbar-fill" style="width:72%;background:linear-gradient(90deg,var(--gov),var(--accent))">720 MLD</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Groundwater</div><div class="cbar-track"><div class="cbar-fill" style="width:18%;background:linear-gradient(90deg,var(--teal),#06B6D4)">180 MLD</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Recycled</div><div class="cbar-track"><div class="cbar-fill" style="width:10%;background:linear-gradient(90deg,var(--green),#22C55E)">100 MLD</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📉 NRW Breakdown</div></div>
+      <div class="card-body">
+        <div class="cbar-wrap">
+          <div class="cbar-row"><div class="cbar-label">Pipe Leaks</div><div class="cbar-track"><div class="cbar-fill" style="width:56%;background:linear-gradient(90deg,var(--red),#F87171)">~15.7%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Meter Error</div><div class="cbar-track"><div class="cbar-fill" style="width:29%;background:linear-gradient(90deg,var(--amber),#F59E0B)">~8.1%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Theft</div><div class="cbar-track"><div class="cbar-fill" style="width:15%;background:linear-gradient(90deg,var(--purple),#A855F7)">~4.2%</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📜 Recent Audit Actions</div></div>
+      <div class="card-body" style="padding-bottom:14px">
+        <div id="ov-audit" class="audit-log" style="max-height:130px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: ZONE CONTROL ════════════════════════ -->
+<section class="page" id="page-zones">
+  <div class="conn-banner">
+    <div class="conn-dot"></div>
+    <div class="conn-text">Zone data from <strong>GET /api/dashboard/zones</strong> · Same data shown in citizen dashboard — changes here reflect there</div>
+  </div>
+  <div class="zone-grid" id="zone-grid"></div>
+</section>
+
+<!-- ══════════ PAGE: INCIDENTS ═══════════════════════════ -->
+<section class="page" id="page-incidents">
+  <div class="g31">
+    <div>
+      <div class="card mb16">
+        <div class="card-hd"><div class="card-title">🚨 Active Incidents — From Backend</div>
+          <span class="card-badge" style="background:rgba(220,38,38,.08);color:var(--red)">GET /api/map/incidents</span>
+        </div>
+        <div class="card-body" style="padding-bottom:14px">
+          <table class="gov-table">
+            <thead><tr><th>ID</th><th>Zone</th><th>Type</th><th>Severity</th><th>Reported</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="inc-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-hd"><div class="card-title">📊 Incident Summary</div></div>
+        <div class="card-body">
+          <div class="mrow"><span class="mkey">🔴 Critical</span><span class="mval rd">4</span></div>
+          <div class="mrow"><span class="mkey">🟠 High</span><span class="mval am">3</span></div>
+          <div class="mrow"><span class="mkey">🔵 Monitoring</span><span class="mval bl">5</span></div>
+          <div class="mrow"><span class="mkey">✅ Resolved today</span><span class="mval gn">8</span></div>
+          <div class="mrow"><span class="mkey">Avg response time</span><span class="mval">18 min</span></div>
+          <div class="mrow"><span class="mkey">Drone verifications</span><span class="mval">23 today</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">⚡ Incident Actions</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <button class="btn btn-d" style="width:100%;justify-content:center" onclick="openEmergencyModal()">🚨 Broadcast Alert</button>
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="openDispatchModal()">🚛 Dispatch Team</button>
+            <button class="btn btn-s" style="width:100%;justify-content:center">📄 Export Incident Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: RESOURCE DISPATCH ═══════════════════ -->
+<section class="page" id="page-dispatch">
+  <div class="g2 mb20">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🚛 Active Dispatch Queue</div><span class="card-badge" style="background:rgba(14,165,233,.08);color:var(--water)">Real-time</span></div>
+      <div class="card-body" style="padding-bottom:14px">
+        <div class="dispatch-queue" id="dispatch-queue"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">➕ New Dispatch</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Resource Type</label>
+          <select class="fs" id="disp-type">
+            <option>Water Tanker</option><option>Repair Team</option><option>Drone Unit</option><option>Emergency Response</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Target Zone</label>
+          <select class="fs" id="disp-zone">
+            <option>Koramangala</option><option>Indiranagar</option><option>Whitefield</option><option>Hebbal</option>
+            <option>Jayanagar</option><option>HSR Layout</option><option>Marathahalli</option><option>Yelahanka</option>
+            <option>Electronic City</option><option>Rajajinagar</option><option>BTM Layout</option><option>Banashankari</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Priority</label>
+          <select class="fs" id="disp-priority"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+        </div>
+        <div class="fg"><label class="fl">Notes</label>
+          <textarea class="textarea" id="disp-notes" placeholder="Reason for dispatch, coordinates, special instructions…"></textarea>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="dispatchResource()">🚀 Dispatch Now</button>
+        <div id="disp-result" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📊 Fleet Status</div></div>
+    <div class="card-body">
+      <div class="cbar-wrap">
+        <div class="cbar-row"><div class="cbar-label">Tankers Active</div><div class="cbar-track"><div class="cbar-fill" style="width:70%;background:linear-gradient(90deg,var(--water),var(--teal))">42 of 60</div></div></div>
+        <div class="cbar-row"><div class="cbar-label">Repair Teams</div><div class="cbar-track"><div class="cbar-fill" style="width:55%;background:linear-gradient(90deg,var(--gov),var(--accent))">11 of 20</div></div></div>
+        <div class="cbar-row"><div class="cbar-label">Drone Fleet</div><div class="cbar-track"><div class="cbar-fill" style="width:80%;background:linear-gradient(90deg,var(--accent),var(--purple))">8 of 10</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: DRONE FLEET ═════════════════════════ -->
+<section class="page" id="page-drones">
+  <div class="conn-banner">
+    <div class="conn-dot"></div>
+    <div class="conn-text">Drone telemetry mirrors the <strong>Aquix Simulation Dashboard</strong> · Same swarm logic, same zone assignments</div>
+  </div>
+  <div class="card mb20">
+    <div class="card-hd"><div class="card-title">🚁 Drone Fleet — Government View</div>
+      <span class="card-badge" style="background:rgba(26,110,255,.08);color:var(--accent)">8 Active · Swarm ON</span>
+    </div>
+    <div class="card-body">
+      <div class="drone-grid" id="drone-grid"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📡 Swarm Intelligence Status</div></div>
+      <div class="card-body">
+        <div class="mrow"><span class="mkey">Active Mode</span><span class="mval bl">Pheromone Convergence</span></div>
+        <div class="mrow"><span class="mkey">Drones Converging</span><span class="mval rd">3 (on critical zones)</span></div>
+        <div class="mrow"><span class="mkey">Drones Patrolling</span><span class="mval gn">5</span></div>
+        <div class="mrow"><span class="mkey">Coverage</span><span class="mval">87% of city area</span></div>
+        <div class="mrow"><span class="mkey">Avg Battery</span><span class="mval am">72%</span></div>
+        <div class="mrow"><span class="mkey">False Positives Today</span><span class="mval gn">0 (filtered)</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🎛️ Swarm Controls</div></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-p" style="width:100%;justify-content:center">⬡ Recall All to Base</button>
+          <button class="btn btn-p" style="width:100%;justify-content:center;background:var(--red)" onclick="openEmergencyModal()">🚨 Emergency Convergence</button>
+          <button class="btn btn-s" style="width:100%;justify-content:center">📍 Assign Custom Route</button>
+          <button class="btn btn-s" style="width:100%;justify-content:center">📊 Download Flight Logs</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: COMPLAINTS ══════════════════════════ -->
+<section class="page" id="page-complaints">
+  <div class="g31">
+    <div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">📋 Complaint Queue</div>
+          <span class="card-badge" style="background:rgba(217,119,6,.08);color:var(--amber)">GET /api/complaints/status</span>
+        </div>
+        <div class="card-body" style="padding-bottom:14px" id="comp-list"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-hd"><div class="card-title">🔍 Lookup Ticket</div></div>
+        <div class="card-body">
+          <div class="fg"><label class="fl">Ticket / Booking ID</label>
+            <input class="fi" id="ticket-lookup" placeholder="AQ-2001 or BK-2001" />
+          </div>
+          <button class="btn btn-p" style="width:100%;justify-content:center" onclick="lookupTicket()">Search</button>
+          <div id="ticket-result" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📊 Complaint Stats</div></div>
+        <div class="card-body">
+          <div class="mrow"><span class="mkey">Open</span><span class="mval rd">14</span></div>
+          <div class="mrow"><span class="mkey">In Progress</span><span class="mval am">8</span></div>
+          <div class="mrow"><span class="mkey">Resolved today</span><span class="mval gn">6</span></div>
+          <div class="mrow"><span class="mkey">Avg resolve time</span><span class="mval">3.2 days</span></div>
+          <div class="mrow"><span class="mkey">Top category</span><span class="mval bl">Pipe Leak (40%)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: POLICY CONTROLS ═════════════════════ -->
+<section class="page" id="page-policy">
+  <div class="alert-banner warn mb16">
+    <div class="ab-icon">⚖️</div>
+    <div class="ab-text"><strong>Policy changes activate immediately</strong> — they update water redistribution logic in the Decision Agent and are reflected in the citizen-facing Aquix dashboard within 60 seconds.</div>
+  </div>
+  <div class="policy-grid mb20">
+    <div class="policy-card">
+      <div class="policy-title">🚨 Emergency Pressure Reduction</div>
+      <div class="policy-status ps-active">ACTIVE</div>
+      <div class="policy-desc">Reduce pipeline pressure by 30% in zones with confirmed leaks to minimize water loss during repair windows.</div>
+      <button class="policy-btn" onclick="logAction('Deactivated Emergency Pressure Reduction policy')">Deactivate</button>
+    </div>
+    <div class="policy-card">
+      <div class="policy-title">⚖️ Equitable Redistribution Mode</div>
+      <div class="policy-status ps-active">ACTIVE</div>
+      <div class="policy-desc">AI Decision Agent redistributes flow proportional to population need, prioritizing low-income residential zones.</div>
+      <button class="policy-btn" onclick="logAction('Toggled Equitable Redistribution policy')">Configure</button>
+    </div>
+    <div class="policy-card">
+      <div class="policy-title">🌊 Monsoon Flood Protocol</div>
+      <div class="policy-status ps-pending">PENDING APPROVAL</div>
+      <div class="policy-desc">Trigger pre-emptive tanker positioning and drainage alerts when flood risk exceeds 60% in any zone.</div>
+      <button class="policy-btn" onclick="logAction('Approved Monsoon Flood Protocol')">Approve</button>
+    </div>
+    <div class="policy-card">
+      <div class="policy-title">🚿 Car Wash / Irrigation Filter</div>
+      <div class="policy-status ps-active">ACTIVE</div>
+      <div class="policy-desc">Temporal pattern filter: spikes &lt;20 min in domestic zones auto-downgraded from "leak" to "transient usage".</div>
+      <button class="policy-btn" onclick="logAction('Adjusted False Positive Filter thresholds')">Adjust</button>
+    </div>
+    <div class="policy-card">
+      <div class="policy-title">📅 Scheduled Zone Shutdowns</div>
+      <div class="policy-status ps-active">ACTIVE</div>
+      <div class="policy-desc">Automated supply shutdowns for maintenance windows, with 24h advance SMS/app notification to residents.</div>
+      <button class="policy-btn" onclick="openShutdownModal()">Schedule New</button>
+    </div>
+    <div class="policy-card">
+      <div class="policy-title">🌾 Farmer Water Priority</div>
+      <div class="policy-status ps-draft">DRAFT</div>
+      <div class="policy-desc">Reserve 15% of Cauvery Stage 5 supply for agricultural zones during kharif season (June–Oct).</div>
+      <button class="policy-btn" onclick="logAction('Submitted Farmer Water Priority for review')">Submit for Review</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🔒 Zone Shutdown Planner</div></div>
+    <div class="card-body">
+      <div class="g3">
+        <div class="fg"><label class="fl">Zone</label><select class="fs"><option>Koramangala</option><option>Whitefield</option><option>BTM Layout</option></select></div>
+        <div class="fg"><label class="fl">Date & Time</label><input class="fi" type="datetime-local" /></div>
+        <div class="fg"><label class="fl">Duration (hours)</label><input class="fi" type="number" value="4" min="1" max="24" /></div>
+      </div>
+      <div class="fg"><label class="fl">Reason (sent to residents)</label><input class="fi" placeholder="e.g. Scheduled pipe maintenance — Zone K12"/></div>
+      <button class="btn btn-p" onclick="logAction('Scheduled zone shutdown — notified residents via BWSSB app')">📅 Schedule & Notify Residents</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: SDG TRACKER ═════════════════════════ -->
+<section class="page" id="page-sdg">
+  <div class="alert-banner info mb16">
+    <div class="ab-icon">🌍</div>
+    <div class="ab-text"><strong>SDG Progress</strong> calculated from live BWSSB data. Updated weekly. Metrics feed into Karnataka's smart city report.</div>
+  </div>
+  <div class="sdg-grid mb20">
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#00689D">6</div>
+        <div class="sdg-title">Clean Water &amp; Sanitation</div>
+      </div>
+      <div class="sdg-metric" style="color:#00689D">84%</div>
+      <div class="sdg-label">Population with safe water access</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:84%;background:#00689D"></div></div>
+      <div class="sdg-target">Target 100% by 2030 · +2% this quarter</div>
+    </div>
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#FD9D24">11</div>
+        <div class="sdg-title">Sustainable Cities</div>
+      </div>
+      <div class="sdg-metric" style="color:#FD9D24">72%</div>
+      <div class="sdg-label">Smart infrastructure coverage</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:72%;background:#FD9D24"></div></div>
+      <div class="sdg-target">Target 90% by 2030 · Drone coverage key driver</div>
+    </div>
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#3F7E44">13</div>
+        <div class="sdg-title">Climate Action</div>
+      </div>
+      <div class="sdg-metric" style="color:#3F7E44">61%</div>
+      <div class="sdg-label">Water use efficiency vs baseline</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:61%;background:#3F7E44"></div></div>
+      <div class="sdg-target">NRW reduction = 18kL saved · Leak detection impact</div>
+    </div>
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#FCC30B">9</div>
+        <div class="sdg-title">Industry &amp; Innovation</div>
+      </div>
+      <div class="sdg-metric" style="color:#a08000">88%</div>
+      <div class="sdg-label">AI/ML infrastructure adoption</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:88%;background:#FCC30B"></div></div>
+      <div class="sdg-target">Isolation Forest · Swarm AI · Computer Vision</div>
+    </div>
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#DD1367">10</div>
+        <div class="sdg-title">Reduced Inequalities</div>
+      </div>
+      <div class="sdg-metric" style="color:#DD1367">84%</div>
+      <div class="sdg-label">Equity score across zones</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:84%;background:#DD1367"></div></div>
+      <div class="sdg-target">Decision Agent redistribution active · +2% MoM</div>
+    </div>
+    <div class="sdg-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="sdg-num" style="background:#4C9F38">3</div>
+        <div class="sdg-title">Good Health &amp; Well-being</div>
+      </div>
+      <div class="sdg-metric" style="color:#4C9F38">7.2</div>
+      <div class="sdg-label">Water pH (WHO safe: 6.5–8.5)</div>
+      <div class="sdg-bar-bg"><div class="sdg-bar-fill" style="width:92%;background:#4C9F38"></div></div>
+      <div class="sdg-target">TDS 310 ppm · Cauvery + treatment compliant</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📊 Quarterly SDG Submission</div></div>
+    <div class="card-body">
+      <div class="g3">
+        <div class="mrow" style="border:none;padding:0"><span class="mkey">Last submitted</span><span class="mval">Jan 31, 2025</span></div>
+        <div class="mrow" style="border:none;padding:0"><span class="mkey">Next due</span><span class="mval am">Apr 30, 2025</span></div>
+        <div class="mrow" style="border:none;padding:0"><span class="mkey">Submitted to</span><span class="mval">Karnataka Smart City Mission</span></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-p" onclick="logAction('Exported SDG report to Karnataka Smart City portal')">📤 Export to State Portal</button>
+        <button class="btn btn-s">📄 Download PDF Report</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: AUDIT LOG ════════════════════════════ -->
+<section class="page" id="page-audit">
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📜 Government Audit Log</div>
+      <span class="card-badge" style="background:rgba(30,58,95,.08);color:var(--gov)">All officer actions recorded</span>
+    </div>
+    <div class="card-body" style="padding-bottom:14px">
+      <div class="audit-log" id="full-audit-log" style="max-height:500px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: REPORTS ══════════════════════════════ -->
+<section class="page" id="page-reports">
+  <div class="g2 mb20">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 Generate Report</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Report Type</label>
+          <select class="fs">
+            <option>Daily Operations Summary</option>
+            <option>Leak Detection Report</option>
+            <option>SDG Progress Report</option>
+            <option>Zone-wise Water Audit</option>
+            <option>Drone Coverage Report</option>
+            <option>NRW Analysis</option>
+            <option>Equity Distribution Report</option>
+          </select>
+        </div>
+        <div class="g2" style="gap:10px">
+          <div class="fg"><label class="fl">From Date</label><input class="fi" type="date" /></div>
+          <div class="fg"><label class="fl">To Date</label><input class="fi" type="date" /></div>
+        </div>
+        <div class="fg"><label class="fl">Export Format</label>
+          <select class="fs"><option>PDF</option><option>Excel (.xlsx)</option><option>JSON (API)</option><option>CSV</option></select>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="logAction('Generated Leak Detection Report — exported PDF')">Generate &amp; Export</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📅 Scheduled Reports</div></div>
+      <div class="card-body" style="padding-bottom:14px">
+        <div class="mrow"><span class="mkey">Daily Ops</span><span class="mval gn">● Every 6 AM</span></div>
+        <div class="mrow"><span class="mkey">Weekly Leak Summary</span><span class="mval gn">● Monday 8 AM</span></div>
+        <div class="mrow"><span class="mkey">Monthly SDG Report</span><span class="mval gn">● 1st of month</span></div>
+        <div class="mrow"><span class="mkey">Quarterly State Report</span><span class="mval am">● Pending Apr 30</span></div>
+        <div class="mrow"><span class="mkey">Emergency Alerts</span><span class="mval bl">● Real-time SMS</span></div>
+        <div style="margin-top:12px">
+          <button class="btn btn-s" style="width:100%;justify-content:center">⚙️ Configure Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PAGE: API BRIDGE ═══════════════════════════ -->
+<section class="page" id="page-api">
+  <div class="conn-banner">
+    <div class="conn-dot"></div>
+    <div class="conn-text">This dashboard shares the <strong>exact same backend</strong> as the citizen Aquix frontend. Changes pushed via this panel are immediately reflected there.</div>
+    <div class="conn-endpoint">localhost:5000</div>
+  </div>
+  <div class="card mb20">
+    <div class="card-hd"><div class="card-title">🔗 Shared Backend Endpoints</div></div>
+    <div class="card-body" style="padding-bottom:14px">
+      <table class="gov-table">
+        <thead><tr><th>Endpoint</th><th>Method</th><th>Used By</th><th>Gov Use</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/dashboard/zones</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen + Gov</td><td>Zone Control page</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/dashboard/overview</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen + Gov</td><td>Command Overview stats</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/map/incidents</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen Map + Gov</td><td>Incidents table</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/anomaly/detect</td><td><span class="sev-badge MEDIUM">POST</span></td><td>Gov only</td><td>Force re-detection</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/agents/run</td><td><span class="sev-badge MEDIUM">POST</span></td><td>Gov triggers</td><td>Run all 4 agents</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/services/book</td><td><span class="sev-badge MEDIUM">POST</span></td><td>Citizen + Gov</td><td>Dispatch tankers</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/complaints/submit</td><td><span class="sev-badge MEDIUM">POST</span></td><td>Citizen + Gov</td><td>Create official complaint</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/complaints/status/:id</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen + Gov</td><td>Ticket lookup</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/bwssb/schedule</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen + Gov</td><td>View/edit schedules</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/map/heatmap</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen Map + Gov</td><td>Heatmap overlay</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/predict/flood</td><td><span class="sev-badge MEDIUM">POST</span></td><td>Gov only</td><td>Emergency flood prep</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+          <tr><td style="font-family:'DM Mono',monospace;font-size:11px">/api/weather/Bengaluru</td><td><span class="sev-badge LOW">GET</span></td><td>Citizen + Gov</td><td>Prediction Agent feed</td><td><span class="sev-badge RESOLVED">● LIVE</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🧪 Live API Tester</div></div>
+    <div class="card-body">
+      <div class="g2">
+        <div>
+          <div class="fg"><label class="fl">Endpoint</label>
+            <select class="fs" id="api-endpoint">
+              <option value="/api/dashboard/overview">GET /api/dashboard/overview</option>
+              <option value="/api/dashboard/zones">GET /api/dashboard/zones</option>
+              <option value="/api/map/incidents">GET /api/map/incidents</option>
+              <option value="/api/anomaly/history">GET /api/anomaly/history</option>
+              <option value="/api/bwssb/schedule">GET /api/bwssb/schedule</option>
+              <option value="/api/health">GET /api/health</option>
+            </select>
+          </div>
+          <button class="btn btn-p" onclick="testApi()">▶ Call Endpoint</button>
+        </div>
+        <div>
+          <label class="fl">Response</label>
+          <pre id="api-response" style="background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:12px;font-family:'DM Mono',monospace;font-size:10.5px;max-height:180px;overflow-y:auto;color:var(--text2);white-space:pre-wrap">Click "Call Endpoint" to test</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ══════════ EMERGENCY MODAL ════════════════════════════ -->
+<div class="modal-overlay" id="modal-emergency">
+  <div class="modal">
+    <div class="modal-title">🚨 Issue Emergency Alert</div>
+    <div class="modal-sub">Alert will broadcast to all BWSSB staff and push notification to citizen Aquix app users</div>
+    <div class="fg"><label class="fl">Alert Type</label>
+      <select class="fs" id="em-type"><option>Critical Pipe Burst</option><option>Zone Shutdown</option><option>Water Contamination</option><option>Flood Warning</option><option>Supply Disruption</option></select>
+    </div>
+    <div class="fg"><label class="fl">Affected Zones</label>
+      <input class="fi" id="em-zones" placeholder="e.g. Koramangala, BTM Layout, Whitefield" />
+    </div>
+    <div class="fg"><label class="fl">Message to Citizens</label>
+      <textarea class="textarea" id="em-msg" placeholder="Water supply disrupted in your area due to emergency pipe repair. Expected restoration: 6 hours. Tankers dispatched."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-s" onclick="closeModal('modal-emergency')">Cancel</button>
+      <button class="btn btn-d" onclick="issueEmergencyAlert()">🚨 Issue Alert</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ DISPATCH MODAL ═════════════════════════════ -->
+<div class="modal-overlay" id="modal-dispatch">
+  <div class="modal">
+    <div class="modal-title">🚛 Quick Dispatch</div>
+    <div class="modal-sub">Dispatches via POST /api/services/book — same endpoint used by citizen booking</div>
+    <div class="fg"><label class="fl">Zone</label>
+      <select class="fs" id="qd-zone"><option>Koramangala</option><option>Whitefield</option><option>BTM Layout</option><option>HSR Layout</option></select>
+    </div>
+    <div class="fg"><label class="fl">Service</label>
+      <select class="fs" id="qd-service"><option>Water Tanker</option><option>Repair Team</option><option>Emergency Unit</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-s" onclick="closeModal('modal-dispatch')">Cancel</button>
+      <button class="btn btn-p" onclick="quickDispatch()">🚀 Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHUTDOWN MODAL ═════════════════════════════ -->
+<div class="modal-overlay" id="modal-shutdown">
+  <div class="modal">
+    <div class="modal-title">🔒 Schedule Zone Shutdown</div>
+    <div class="modal-sub">Residents notified 24h in advance via SMS and Aquix app</div>
+    <div class="fg"><label class="fl">Zone</label><select class="fs"><option>Koramangala</option><option>Electronic City</option><option>Whitefield</option></select></div>
+    <div class="fg"><label class="fl">Date &amp; Time</label><input class="fi" type="datetime-local" /></div>
+    <div class="fg"><label class="fl">Duration</label><input class="fi" type="number" value="4" min="1" max="24" placeholder="Hours" /></div>
+    <div class="modal-footer">
+      <button class="btn btn-s" onclick="closeModal('modal-shutdown')">Cancel</button>
+      <button class="btn btn-p" onclick="logAction('Scheduled shutdown — residents notified');closeModal('modal-shutdown')">Confirm &amp; Notify</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG — same backend as citizen frontend
+// ══════════════════════════════════════════════
+const API = 'http://localhost:5000/api';
+const OFFICER = 'Sr. Engineer Ravi K.';
+
+// ══════════════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════════════
+let auditEntries = [
+  { time:'08:12', icon:'✅', msg:'<strong>System initialized</strong> — all 17 API endpoints connected', actor: OFFICER },
+  { time:'08:15', icon:'🔄', msg:'<strong>Zone data synced</strong> from /api/dashboard/zones — 12 zones loaded', actor:'Auto' },
+  { time:'08:18', icon:'🚨', msg:'<strong>Critical alert:</strong> Koramangala leak detected by Isolation Forest model', actor:'AI System' },
+  { time:'08:22', icon:'🚛', msg:'<strong>Tanker dispatched</strong> to Koramangala — Ticket BK-2001', actor: OFFICER },
+  { time:'08:31', icon:'🚁', msg:'<strong>Drone D3 converged</strong> on BTM Layout — thermal anomaly confirmed', actor:'Drone Agent' },
+];
+
+function logAction(msg, icon='📋', actor=OFFICER) {
+  const now = new Date();
+  const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  auditEntries.unshift({ time:t, icon, msg:`<strong>Gov Action:</strong> ${msg}`, actor });
+  if (auditEntries.length > 50) auditEntries.pop();
+  renderAuditLog();
+}
+
+function renderAuditLog() {
+  const html = auditEntries.map(e =>
+    `<div class="alog-item">
+      <div class="alog-time">${e.time}</div>
+      <div class="alog-icon">${e.icon}</div>
+      <div class="alog-msg">${e.msg}<div class="alog-actor">${e.actor}</div></div>
+    </div>`
+  ).join('');
+  document.querySelectorAll('#ov-audit, #full-audit-log').forEach(el => { if(el) el.innerHTML = html; });
+}
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+const PAGE_TITLES = {
+  overview:'Command Overview', zones:'Zone Control', incidents:'Active Incidents',
+  dispatch:'Resource Dispatch', drones:'Drone Fleet', complaints:'Complaint Queue',
+  policy:'Policy Controls', sdg:'SDG Tracker', audit:'Audit Log',
+  reports:'Reports & Export', api:'API Bridge'
+};
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  if (pg) pg.classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('topbar-title').textContent = (PAGE_TITLES[id]||id) + ' ';
+  document.getElementById('topbar-title').innerHTML = (PAGE_TITLES[id]||id) + ' <span>/ BWSSB Bangalore</span>';
+  if (id==='zones') renderZonePage();
+  if (id==='incidents') renderIncidentsPage();
+  if (id==='dispatch') renderDispatchQueue();
+  if (id==='drones') renderDroneGrid();
+  if (id==='complaints') renderComplaintList();
+}
+
+// ══════════════════════════════════════════════
+// BACKEND API CALLS
+// ══════════════════════════════════════════════
+async function apiCall(endpoint, method='GET', body=null) {
+  try {
+    const opts = { method, headers:{'Content-Type':'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(API + endpoint, opts);
+    return await r.json();
+  } catch(e) {
+    return null; // backend not running — use mock data
+  }
+}
+
+// ══════════════════════════════════════════════
+// ZONE DATA (from backend or mock)
+// ══════════════════════════════════════════════
+const MOCK_ZONES = [
+  {zone_id:'Z1',name:'Koramangala',risk:'HIGH',usage_pct:87,population:8500,pressure_bar:1.8,leak:true,flow_lps:142,lat:12.9279,lng:77.6271},
+  {zone_id:'Z2',name:'Indiranagar',risk:'MEDIUM',usage_pct:64,population:6200,pressure_bar:3.1,leak:false,flow_lps:88},
+  {zone_id:'Z3',name:'Whitefield',risk:'HIGH',usage_pct:91,population:9100,pressure_bar:2.2,leak:true,flow_lps:156},
+  {zone_id:'Z4',name:'Hebbal',risk:'LOW',usage_pct:45,population:4300,pressure_bar:3.5,leak:false,flow_lps:55},
+  {zone_id:'Z5',name:'Jayanagar',risk:'LOW',usage_pct:58,population:5600,pressure_bar:3.4,leak:false,flow_lps:72},
+  {zone_id:'Z6',name:'HSR Layout',risk:'MEDIUM',usage_pct:73,population:7200,pressure_bar:2.8,leak:true,flow_lps:105},
+  {zone_id:'Z7',name:'Marathahalli',risk:'MEDIUM',usage_pct:69,population:6800,pressure_bar:2.9,leak:false,flow_lps:94},
+  {zone_id:'Z8',name:'Yelahanka',risk:'LOW',usage_pct:41,population:3900,pressure_bar:3.6,leak:false,flow_lps:48},
+  {zone_id:'Z9',name:'Electronic City',risk:'MEDIUM',usage_pct:77,population:7500,pressure_bar:2.7,leak:false,flow_lps:108},
+  {zone_id:'Z10',name:'Rajajinagar',risk:'LOW',usage_pct:52,population:5100,pressure_bar:3.3,leak:false,flow_lps:66},
+  {zone_id:'Z11',name:'BTM Layout',risk:'HIGH',usage_pct:88,population:8200,pressure_bar:1.9,leak:true,flow_lps:138},
+  {zone_id:'Z12',name:'Banashankari',risk:'LOW',usage_pct:49,population:4700,pressure_bar:3.4,leak:false,flow_lps:60},
+];
+
+let zones = [...MOCK_ZONES];
+
+async function loadZones() {
+  const data = await apiCall('/dashboard/zones');
+  if (data && Array.isArray(data)) zones = data;
+  renderOverviewZoneTable();
+}
+
+function renderOverviewZoneTable() {
+  const tbody = document.getElementById('ov-zone-table');
+  if (!tbody) return;
+  tbody.innerHTML = zones.map(z =>
+    `<tr>
+      <td><strong>${z.name}</strong></td>
+      <td><span class="sev-badge ${z.risk}">${z.risk}</span></td>
+      <td style="font-family:'DM Mono',monospace">${z.flow_lps} L/s</td>
+      <td style="font-family:'DM Mono',monospace">${z.pressure_bar} bar</td>
+      <td>${z.leak ? '<span style="color:var(--red);font-weight:700">● LEAK</span>' : '<span style="color:var(--green)">✓ Clear</span>'}</td>
+      <td>
+        <button class="act-btn" onclick="showPage('incidents',null)">View</button>
+        ${z.leak ? `<button class="act-btn danger" onclick="openDispatchModal()">Dispatch</button>` : ''}
+      </td>
+    </tr>`
+  ).join('');
+}
+
+function renderZonePage() {
+  const grid = document.getElementById('zone-grid');
+  if (!grid) return;
+  grid.innerHTML = zones.map(z => {
+    const riskClass = z.risk==='HIGH'?'high':z.risk==='MEDIUM'?'medium':'low';
+    const barCol = z.risk==='HIGH'?'var(--red)':z.risk==='MEDIUM'?'var(--amber)':'var(--green)';
+    return `<div class="zone-card ${riskClass}">
+      ${z.leak ? '<div class="leak-dot" title="Active leak"></div>' : ''}
+      <div class="zone-name">${z.name}</div>
+      <div class="zone-loc">${z.zone_id} · Bangalore</div>
+      <div class="zone-metrics">
+        <div class="zm"><div class="zm-label">Flow</div><div class="zm-val">${z.flow_lps} L/s</div></div>
+        <div class="zm"><div class="zm-label">Pressure</div><div class="zm-val">${z.pressure_bar} bar</div></div>
+        <div class="zm"><div class="zm-label">Usage</div><div class="zm-val">${z.usage_pct}%</div></div>
+        <div class="zm"><div class="zm-label">Population</div><div class="zm-val">${(z.population/1000).toFixed(1)}K</div></div>
+      </div>
+      <div class="flow-bar"><div class="flow-fill" style="width:${z.usage_pct}%;background:${barCol}"></div></div>
+      <div class="zone-actions">
+        <button class="zone-btn" onclick="logAction('Viewed zone details: ${z.name}')">Details</button>
+        <button class="zone-btn" onclick="openDispatchModal()">Dispatch</button>
+        ${z.risk==='HIGH'?`<button class="zone-btn red" onclick="logAction('Initiated shutdown review for ${z.name}')">Shutdown</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// INCIDENTS (from backend or mock)
+// ══════════════════════════════════════════════
+const MOCK_INCIDENTS = [
+  {id:'INC-001',zone:'Koramangala',type:'Pipe Burst',severity:'CRITICAL',reported:'08:14',status:'ACTIVE'},
+  {id:'INC-002',zone:'Whitefield',type:'High Flow Anomaly',severity:'HIGH',reported:'07:55',status:'IN_PROGRESS'},
+  {id:'INC-003',zone:'BTM Layout',type:'Pressure Drop',severity:'HIGH',reported:'08:02',status:'ACTIVE'},
+  {id:'INC-004',zone:'HSR Layout',type:'Leak Detected',severity:'MEDIUM',reported:'07:40',status:'MONITORING'},
+  {id:'INC-005',zone:'Electronic City',type:'Supply Shutdown',severity:'MEDIUM',reported:'06:30',status:'SCHEDULED'},
+  {id:'INC-006',zone:'Indiranagar',type:'Usage Spike',severity:'LOW',reported:'08:10',status:'MONITORING'},
+  {id:'INC-007',zone:'Marathahalli',type:'Water Quality Flag',severity:'MEDIUM',reported:'07:15',status:'TESTING'},
+];
+
+function renderIncidentsPage() {
+  const tbody = document.getElementById('inc-table');
+  if (!tbody) return;
+  tbody.innerHTML = MOCK_INCIDENTS.map(i =>
+    `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">${i.id}</td>
+      <td><strong>${i.zone}</strong></td>
+      <td>${i.type}</td>
+      <td><span class="sev-badge ${i.severity}">${i.severity}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${i.reported}</td>
+      <td><span class="sev-badge ${i.status==='ACTIVE'?'CRITICAL':i.status==='RESOLVED'?'RESOLVED':i.status==='IN_PROGRESS'?'HIGH':'MEDIUM'}">${i.status}</span></td>
+      <td>
+        <button class="act-btn" onclick="logAction('Assigned ${i.id} — ${i.zone} to repair team')">Assign</button>
+        <button class="act-btn danger" onclick="logAction('Escalated ${i.id} to Critical')">Escalate</button>
+      </td>
+    </tr>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════
+// DISPATCH QUEUE
+// ══════════════════════════════════════════════
+const DISPATCH_Q = [
+  {icon:'🚛',cls:'tanker',title:'Water Tanker → Koramangala',meta:'BK-2001 · Dispatched 08:22 · ETA 4–6hr',status:'active',statusTxt:'ACTIVE'},
+  {icon:'🔧',cls:'tech',title:'Repair Team → BTM Layout',meta:'BK-2002 · En route · Pipe burst repair',status:'enroute',statusTxt:'EN ROUTE'},
+  {icon:'🚁',cls:'drone',title:'Drone D3 → Whitefield',meta:'Swarm convergence · Thermal verification',status:'active',statusTxt:'SCANNING'},
+  {icon:'🚨',cls:'emergency',title:'Emergency Unit → HSR Layout',meta:'BK-2003 · Pending · Pressure failure',status:'pending',statusTxt:'PENDING'},
+  {icon:'🚛',cls:'tanker',title:'Tanker x2 → Electronic City',meta:'BK-2004 · Completed shutdown support',status:'complete',statusTxt:'COMPLETE'},
+];
+
+function renderDispatchQueue() {
+  const el = document.getElementById('dispatch-queue');
+  if (!el) return;
+  el.innerHTML = DISPATCH_Q.map(d =>
+    `<div class="dq-item">
+      <div class="dq-icon ${d.cls}">${d.icon}</div>
+      <div class="dq-info">
+        <div class="dq-title">${d.title}</div>
+        <div class="dq-meta">${d.meta}</div>
+      </div>
+      <div class="dq-status ${d.status}">${d.statusTxt}</div>
+    </div>`
+  ).join('');
+}
+
+async function dispatchResource() {
+  const type = document.getElementById('disp-type').value;
+  const zone = document.getElementById('disp-zone').value;
+  const priority = document.getElementById('disp-priority').value;
+  const notes = document.getElementById('disp-notes').value;
+  const data = await apiCall('/services/book', 'POST', { service_type:type, zone, priority, notes, booked_by:'Gov-'+OFFICER });
+  const result = document.getElementById('disp-result');
+  if (data && data.ticket_id) {
+    result.innerHTML = `<div style="background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.2);border-radius:var(--rsm);padding:10px 13px;font-size:12px"><strong style="color:var(--green)">✓ Dispatched!</strong> Ticket ${data.ticket_id} · ${data.technician} · ETA ${data.eta}</div>`;
+    logAction(`Dispatched ${type} to ${zone} — Ticket ${data.ticket_id}`,'🚛');
+  } else {
+    result.innerHTML = `<div style="background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.2);border-radius:var(--rsm);padding:10px 13px;font-size:12px"><strong style="color:var(--green)">✓ Dispatch queued</strong> (backend offline — logged locally)</div>`;
+    logAction(`Dispatch queued: ${type} → ${zone} [${priority}]`,'🚛');
+  }
+}
+
+// ══════════════════════════════════════════════
+// DRONE GRID
+// ══════════════════════════════════════════════
+const DRONE_DATA = [
+  {id:'D1',zone:'Koramangala',state:'converge',bat:68,stateClass:'ds-converge'},
+  {id:'D2',zone:'Whitefield',state:'converge',bat:74,stateClass:'ds-converge'},
+  {id:'D3',zone:'BTM Layout',state:'converge',bat:61,stateClass:'ds-converge'},
+  {id:'D4',zone:'Yelahanka',state:'patrol',bat:88,stateClass:'ds-patrol'},
+  {id:'D5',zone:'Hebbal',state:'patrol',bat:91,stateClass:'ds-patrol'},
+  {id:'D6',zone:'HSR Layout',state:'inspect',bat:55,stateClass:'ds-inspect'},
+  {id:'D7',zone:'Indiranagar',state:'patrol',bat:82,stateClass:'ds-patrol'},
+  {id:'D8',zone:'Marathahalli',state:'patrol',bat:79,stateClass:'ds-patrol'},
+];
+
+function renderDroneGrid() {
+  const el = document.getElementById('drone-grid');
+  if (!el) return;
+  el.innerHTML = DRONE_DATA.map(d => {
+    const batCol = d.bat>70?'var(--green)':d.bat>40?'var(--amber)':'var(--red)';
+    return `<div class="drone-card">
+      <div class="drone-id">DRONE ${d.id}</div>
+      <div class="drone-zone">${d.zone}</div>
+      <div class="drone-state ${d.stateClass}">${d.state.toUpperCase()}</div>
+      <div class="drone-bat">
+        <span>🔋</span>
+        <div class="bat-bar"><div class="bat-fill" style="width:${d.bat}%;background:${batCol}"></div></div>
+        <span style="font-family:'DM Mono',monospace;font-size:9.5px">${d.bat}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// COMPLAINT LIST
+// ══════════════════════════════════════════════
+const COMP_DATA = [
+  {id:'AQ-2011',title:'No water supply since 2 days',zone:'Koramangala · Ward 68',cat:'Supply',priority:'HIGH'},
+  {id:'AQ-2012',title:'Pipe burst near main road',zone:'Whitefield · Ward 84',cat:'Leak',priority:'HIGH'},
+  {id:'AQ-2013',title:'Water discoloration / smell',zone:'Hebbal · Ward 5',cat:'Quality',priority:'MEDIUM'},
+  {id:'AQ-2014',title:'Meter not reading correctly',zone:'Jayanagar · Ward 19',cat:'Meter',priority:'LOW'},
+  {id:'AQ-2015',title:'Pothole from water seepage',zone:'BTM Layout · Ward 65',cat:'Infrastructure',priority:'MEDIUM'},
+];
+
+function renderComplaintList() {
+  const el = document.getElementById('comp-list');
+  if (!el) return;
+  el.innerHTML = COMP_DATA.map(c => {
+    const pcls = c.priority==='HIGH'?'cp-high':c.priority==='MEDIUM'?'cp-med':'cp-low';
+    return `<div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-body">
+        <div class="comp-title">${c.title}</div>
+        <div class="comp-meta">${c.id} · ${c.zone}</div>
+        <div>
+          <span class="comp-priority ${pcls}">${c.priority}</span>
+          <span style="font-size:10.5px;color:var(--text3)">${c.cat}</span>
+        </div>
+        <div class="comp-actions">
+          <button class="act-btn" onclick="logAction('Assigned ${c.id} to Ward Office','📋')">Assign</button>
+          <button class="act-btn" onclick="logAction('Resolved ${c.id} — ${c.title}','✅')">Resolve</button>
+          <button class="act-btn danger" onclick="logAction('Escalated ${c.id} to Commissioner','🚨')">Escalate</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// COMPLAINT LOOKUP
+// ══════════════════════════════════════════════
+async function lookupTicket() {
+  const id = document.getElementById('ticket-lookup').value.trim();
+  if (!id) return;
+  const el = document.getElementById('ticket-result');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Looking up…</div>';
+  const data = await apiCall(`/complaints/status/${id}`);
+  if (data && data.status !== 'Not Found') {
+    el.innerHTML = `<div style="background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.2);border-radius:var(--rsm);padding:11px 13px;font-size:12px">
+      <div style="font-weight:700;margin-bottom:6px;color:var(--green)">✓ ${data.ticket_id} — ${data.status}</div>
+      ${Object.entries(data.details||{}).slice(0,5).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><span style="color:var(--text3)">${k.replace(/_/g,' ')}</span><span style="font-family:'DM Mono',monospace;font-size:11px">${v}</span></div>`).join('')}
+    </div>`;
+  } else {
+    el.innerHTML = `<div style="background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.15);border-radius:var(--rsm);padding:11px 13px;font-size:12px;color:var(--red)">Ticket <strong>${id}</strong> not found</div>`;
+  }
+  logAction(`Looked up ticket: ${id}`,'🔍');
+}
+
+// ══════════════════════════════════════════════
+// API TESTER
+// ══════════════════════════════════════════════
+async function testApi() {
+  const endpoint = document.getElementById('api-endpoint').value;
+  const pre = document.getElementById('api-response');
+  pre.textContent = 'Calling…';
+  const data = await apiCall(endpoint);
+  pre.textContent = data ? JSON.stringify(data, null, 2).slice(0, 1200) + (JSON.stringify(data).length > 1200 ? '\n… (truncated)' : '') : '⚠ Backend not running. Start with: python aquix_backend.py';
+  logAction(`Tested API endpoint: ${endpoint}`,'🧪');
+}
+
+// ══════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════
+function openEmergencyModal() { document.getElementById('modal-emergency').classList.add('show'); }
+function openDispatchModal()  { document.getElementById('modal-dispatch').classList.add('show'); }
+function openShutdownModal()  { document.getElementById('modal-shutdown').classList.add('show'); }
+function closeModal(id)       { document.getElementById(id).classList.remove('show'); }
+
+async function issueEmergencyAlert() {
+  const type = document.getElementById('em-type').value;
+  const zones2 = document.getElementById('em-zones').value;
+  const msg = document.getElementById('em-msg').value;
+  logAction(`EMERGENCY ALERT issued: ${type} · Zones: ${zones2||'All'}`,'🚨');
+  closeModal('modal-emergency');
+  // Show banner on overview
+  const el = document.getElementById('ov-alerts');
+  el.innerHTML = `<div class="alert-banner crit mb16"><div class="ab-icon">🚨</div><div class="ab-text"><strong>Emergency Alert Issued:</strong> ${type} — ${zones2||'Multiple zones'} — ${msg.slice(0,80)||'(no message)'}</div><div class="ab-action" onclick="this.parentElement.remove()">Dismiss</div></div>`;
+  document.getElementById('tb-alerts').textContent = parseInt(document.getElementById('tb-alerts').textContent)+1;
+}
+
+async function quickDispatch() {
+  const zone = document.getElementById('qd-zone').value;
+  const service = document.getElementById('qd-service').value;
+  const data = await apiCall('/services/book','POST',{ service_type:service, zone, booked_by:'Gov-'+OFFICER });
+  logAction(`Quick dispatch: ${service} → ${zone}${data?.ticket_id?' · Ticket '+data.ticket_id:''}`,'🚛');
+  closeModal('modal-dispatch');
+}
+
+// ══════════════════════════════════════════════
+// SYNC FROM BACKEND
+// ══════════════════════════════════════════════
+async function syncFromBackend() {
+  logAction('Manual sync triggered — pulling from /api/dashboard/zones','🔄','System');
+  await loadZones();
+  document.getElementById('lastSync').textContent = 'just now';
+}
+
+// ══════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')} IST`;
+  document.getElementById('tb-time').textContent = t;
+}
+setInterval(updateClock, 1000);
+
+// ══════════════════════════════════════════════
+// OVERVIEW ALERT BANNERS
+// ══════════════════════════════════════════════
+function renderInitialAlerts() {
+  document.getElementById('ov-alerts').innerHTML = `
+    <div class="alert-banner crit"><div class="ab-icon">🔴</div><div class="ab-text"><strong>4 Critical Leaks Active:</strong> Koramangala, Whitefield, BTM Layout — Isolation Forest confidence >87%</div><div class="ab-action" onclick="showPage('incidents',null)">View Incidents →</div></div>
+    <div class="alert-banner warn"><div class="ab-icon">🌊</div><div class="ab-text"><strong>Flood Risk MODERATE (42%):</strong> Bangalore South — Prediction Agent recommends pre-positioning tankers</div><div class="ab-action" onclick="openDispatchModal()">Dispatch Now</div></div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+renderInitialAlerts();
+renderAuditLog();
+renderDispatchQueue();
+loadZones();
+updateClock();
+</script>
+</body>
+</html>

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquix — BWSSB Bangalore Water Detection</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg:      #f0f4f8;
+  --bg2:     #ffffff;
+  --bg3:     #e8eef5;
+  --panel:   rgba(0,0,0,0.03);
+  --panel2:  rgba(0,80,160,0.05);
+  --border:  #d0dce8;
+  --border2: #b8cce0;
+  --blue:    #1a6fd4;
+  --blue-dim: rgba(26,111,212,0.12);
+  --teal:    #0a9e7a;
+  --teal-dim: rgba(10,158,122,0.12);
+  --red:     #d93025;
+  --red-dim: rgba(217,48,37,0.12);
+  --amber:   #e07b00;
+  --amber-dim: rgba(224,123,0,0.12);
+  --green:   #1e8a40;
+  --green-dim: rgba(30,138,64,0.12);
+  --text:    #1a2b3c;
+  --text2:   #344f66;
+  --muted:   #6b8299;
+  --shadow:  0 1px 4px rgba(0,40,80,0.10);
+  --shadow2: 0 2px 10px rgba(0,40,80,0.13);
+  --font:    'Space Grotesk', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 290px 1fr 310px;
+  grid-template-rows: 62px 1fr 50px;
+}
+
+/* ── HEADER ── */
+header {
+  grid-column: 1 / -1;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 12px;
+  z-index: 10;
+}
+.logo { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.logo-icon {
+  width:34px; height:34px; border-radius:9px;
+  background: linear-gradient(135deg, #1a6fd4, #0a9e7a);
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; box-shadow: 0 2px 6px rgba(26,111,212,0.3);
+}
+.logo-text h1 { font-size:1.05rem; font-weight:700; color:var(--text); letter-spacing:0.3px; line-height:1.1; }
+.logo-text p  { font-size:0.67rem; color:var(--muted); letter-spacing:0.3px; }
+.header-stats { display:flex; gap:4px; flex:1; justify-content:center; }
+.hstat {
+  text-align:center; padding:6px 16px;
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:8px; min-width:80px;
+}
+.hstat-val   { font-size:1.05rem; font-weight:700; font-family:var(--mono); line-height:1.2; }
+.hstat-label { font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:1px; }
+.live-badge {
+  display:flex; align-items:center; gap:6px; flex-shrink:0;
+  background:var(--teal-dim); border:1px solid rgba(10,158,122,0.3);
+  border-radius:20px; padding:6px 14px;
+  font-size:0.75rem; font-weight:700; color:var(--teal); letter-spacing:0.5px;
+}
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:pulse 1.4s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
+
+/* ── LEFT PANEL ── */
+.panel-left {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 14px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+.zone-list { display:flex; flex-direction:column; gap:6px; }
+.zone-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.zone-card:hover  { border-color: var(--blue); background: var(--blue-dim); box-shadow:var(--shadow); }
+.zone-card.alert  { border-color: var(--red) !important; background: var(--red-dim) !important; }
+.zone-card.warning{ border-color: var(--amber) !important; background: var(--amber-dim) !important; }
+.zone-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.zone-name   { font-size:0.78rem; font-weight:700; color:var(--text); line-height:1.2; }
+.zone-sub    { font-size:0.63rem; color:var(--muted); margin-top:1px; }
+.zone-badge  {
+  font-size:0.6rem; font-weight:700; padding:2px 7px; border-radius:10px;
+  text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;
+}
+.badge-ok    { background:var(--green-dim); color:var(--green); border:1px solid rgba(30,138,64,0.25); }
+.badge-warn  { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(224,123,0,0.25); }
+.badge-alert { background:var(--red-dim);   color:var(--red);   border:1px solid rgba(217,48,37,0.25); }
+.badge-scan  { background:var(--blue-dim);  color:var(--blue);  border:1px solid rgba(26,111,212,0.25); }
+.zone-metrics { display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; margin-bottom:5px; }
+.zone-metric  { display:flex; justify-content:space-between; font-size:0.68rem; color:var(--muted); }
+.zone-metric span:last-child { font-family:var(--mono); color:var(--text2); font-size:0.67rem; }
+.zone-bar-bg { height:4px; background:rgba(0,0,0,0.07); border-radius:3px; }
+.zone-bar    { height:100%; border-radius:3px; transition:width 0.9s; }
+
+/* AGENT PILLS */
+.agent-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.agent-pill {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; padding:9px 8px; text-align:center;
+}
+.agent-icon  { font-size:17px; margin-bottom:3px; }
+.agent-name  { font-size:0.68rem; font-weight:700; color:var(--text); }
+.agent-state { font-size:0.6rem; color:var(--muted); margin-top:2px; }
+
+.info-box {
+  background:var(--panel2); border:1px solid rgba(26,111,212,0.18);
+  border-radius:9px; padding:11px 12px;
+  font-size:0.7rem; color:var(--text2); line-height:1.65;
+}
+.info-box span.hl { color:var(--blue); font-weight:600; }
+.info-box span.hl2 { color:var(--teal); font-weight:600; }
+
+/* ── CENTER MAP ── */
+.map-area {
+  position:relative;
+  background: #dde8f2;
+  overflow:hidden;
+}
+canvas#cityMap   { position:absolute; inset:0; width:100%; height:100%; }
+canvas#droneLayer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.map-title {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  background:rgba(255,255,255,0.92); border:1px solid var(--border);
+  border-radius:8px; padding:5px 16px;
+  font-size:0.72rem; font-weight:700; color:var(--text);
+  letter-spacing:0.3px; white-space:nowrap;
+  box-shadow: var(--shadow);
+}
+.map-legend {
+  position:absolute; bottom:12px; left:12px;
+  background:rgba(255,255,255,0.93); border:1px solid var(--border);
+  border-radius:9px; padding:9px 13px;
+  display:flex; flex-direction:column; gap:5px;
+  box-shadow:var(--shadow);
+}
+.legend-item { display:flex; align-items:center; gap:7px; font-size:0.68rem; color:var(--text2); }
+.legend-dot  { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* ── RIGHT PANEL ── */
+.panel-right {
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  padding: 14px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.anomaly-feed {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:9px; padding:11px 12px;
+}
+.feed-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:2px; }
+.feed-item {
+  background:var(--bg2); border-left:3px solid;
+  border-radius:0 6px 6px 0; padding:7px 9px;
+  font-size:0.7rem; line-height:1.4;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+.feed-item.crit { border-color:var(--red); }
+.feed-item.warn { border-color:var(--amber); }
+.feed-item.info { border-color:var(--blue); }
+.feed-time { font-family:var(--mono); color:var(--muted); font-size:0.62rem; }
+.feed-msg  { color:var(--text2); margin-top:2px; font-size:0.7rem; }
+
+.decision-card {
+  background: linear-gradient(135deg, rgba(26,111,212,0.06), rgba(10,158,122,0.05));
+  border:1px solid rgba(26,111,212,0.2); border-radius:9px; padding:12px;
+}
+.decision-title {
+  font-size:0.67rem; text-transform:uppercase; letter-spacing:1px;
+  color:var(--blue); font-weight:700; margin-bottom:9px;
+  padding-bottom:6px; border-bottom:1px solid rgba(26,111,212,0.15);
+}
+.decision-item {
+  display:flex; align-items:center; gap:7px;
+  padding:5px 0; border-bottom:1px solid rgba(0,0,0,0.05);
+  font-size:0.71rem;
+}
+.decision-item:last-child { border-bottom:none; }
+.decision-zone   { color:var(--blue); font-weight:700; min-width:54px; font-family:var(--mono); font-size:0.68rem; }
+.decision-action { color:var(--text2); flex:1; line-height:1.3; }
+.decision-pct    { font-family:var(--mono); font-size:0.68rem; font-weight:700; flex-shrink:0; }
+
+.redistrib-chart {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:9px; padding:11px 12px;
+}
+.rbar-row   { display:flex; align-items:center; gap:7px; margin-bottom:7px; font-size:0.68rem; }
+.rbar-row:last-child { margin-bottom:0; }
+.rbar-label { min-width:60px; color:var(--muted); font-family:var(--mono); font-size:0.63rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.rbar-bg    { flex:1; height:7px; background:rgba(0,0,0,0.08); border-radius:4px; overflow:hidden; }
+.rbar-fill  { height:100%; border-radius:4px; transition:width 1.1s; }
+.rbar-val   { min-width:38px; text-align:right; font-family:var(--mono); font-size:0.65rem; font-weight:600; }
+
+/* ── FOOTER ── */
+footer {
+  grid-column: 1 / -1;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  box-shadow: 0 -1px 4px rgba(0,40,80,0.06);
+}
+.footer-tech { font-size:0.67rem; color:var(--muted); }
+.footer-controls { display:flex; gap:10px; align-items:center; }
+.ctrl-btn {
+  background:var(--bg); border:1px solid var(--border2);
+  border-radius:6px; padding:5px 13px;
+  font-size:0.7rem; color:var(--text2); cursor:pointer;
+  font-family:var(--font); font-weight:600; transition:all 0.15s;
+}
+.ctrl-btn:hover { background:var(--blue-dim); border-color:var(--blue); color:var(--blue); }
+.ctrl-btn.active { background:var(--blue-dim); border-color:var(--blue); color:var(--blue); }
+.speed-select {
+  background:var(--bg); border:1px solid var(--border2);
+  border-radius:6px; padding:4px 8px;
+  font-size:0.7rem; color:var(--text); font-family:var(--font);
+}
+#simTime { font-family:var(--mono); font-size:0.72rem; color:var(--text2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">💧</div>
+    <div class="logo-text">
+      <h1>Aquix</h1>
+      <p>BWSSB · Bangalore Water Detection System</p>
+    </div>
+  </div>
+
+  <div class="header-stats">
+    <div class="hstat">
+      <div class="hstat-val" id="hDrones" style="color:var(--blue)">8</div>
+      <div class="hstat-label">Active Drones</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="hAnomalies" style="color:var(--red)">0</div>
+      <div class="hstat-label">Anomalies</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="hCoverage" style="color:var(--teal)">0%</div>
+      <div class="hstat-label">Coverage</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="hSaved" style="color:var(--green)">0 kL</div>
+      <div class="hstat-label">Leak Saved</div>
+    </div>
+  </div>
+
+  <div class="live-badge"><div class="live-dot"></div>LIVE MONITORING</div>
+</header>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+  <div>
+    <div class="section-label">BWSSB Distribution Zones</div>
+    <div class="zone-list" id="zoneList"></div>
+  </div>
+  <div>
+    <div class="section-label">Swarm Agents</div>
+    <div class="agent-grid">
+      <div class="agent-pill">
+        <div class="agent-icon">🌧️</div>
+        <div class="agent-name">Prediction</div>
+        <div class="agent-state" id="agPred">Forecasting</div>
+      </div>
+      <div class="agent-pill">
+        <div class="agent-icon">🔍</div>
+        <div class="agent-name">Detection</div>
+        <div class="agent-state" id="agDet">Scanning</div>
+      </div>
+      <div class="agent-pill">
+        <div class="agent-icon">🚁</div>
+        <div class="agent-name">Drone</div>
+        <div class="agent-state" id="agDrone">8 active</div>
+      </div>
+      <div class="agent-pill">
+        <div class="agent-icon">⚖️</div>
+        <div class="agent-name">Decision</div>
+        <div class="agent-state" id="agDecision">Optimizing</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Swarm Behavior</div>
+    <div class="info-box">
+      Drones autonomously divide Bangalore zones, converge on anomalies via
+      <span class="hl">Isolation Forest</span> scoring.
+      High-risk zones attract drones via <span class="hl2">pheromone-like signals</span>.
+    </div>
+  </div>
+</div>
+
+<!-- CENTER MAP -->
+<div class="map-area">
+  <canvas id="cityMap"></canvas>
+  <canvas id="droneLayer"></canvas>
+  <div class="map-title">📍 Bangalore — BWSSB Water Distribution Network</div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Critical leak</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Anomaly warning</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Drone scanning</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Normal flow</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#aab8cc"></div>Pipeline</div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-right">
+  <div class="anomaly-feed">
+    <div class="section-label">Live Anomaly Feed</div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+  <div class="decision-card">
+    <div class="decision-title">🤖 Decision Agent — Redistribution</div>
+    <div id="decisionList"></div>
+  </div>
+  <div class="redistrib-chart">
+    <div class="section-label">Zone Water Allocation (%)</div>
+    <div id="redistribBars"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-tech">Multi-Agent System · Isolation Forest Anomaly Detection · Swarm Intelligence · Computer Vision</div>
+  <div class="footer-controls">
+    <button class="ctrl-btn active" id="btnSwarm" onclick="toggleSwarm()">⬡ Swarm ON</button>
+    <button class="ctrl-btn" onclick="injectLeak()">💥 Inject Leak</button>
+    <select class="speed-select" onchange="setSpeed(this.value)">
+      <option value="1">1× speed</option>
+      <option value="2" selected>2× speed</option>
+      <option value="4">4× speed</option>
+    </select>
+    <span id="simTime">T+00:00</span>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════
+// BWSSB BANGALORE REAL ZONE DATA
+// Sources: BWSSB Annual Report 2023-24,
+//   Ward-level distribution data,
+//   Population Census 2011 projected 2024
+// ═══════════════════════════════════════════
+const ZONES = [
+  {
+    id: 'Yelahanka',
+    name: 'Yelahanka',
+    sub: 'North · BWSSB Zone 1',
+    x: 0.04, y: 0.04, w: 0.30, h: 0.24,
+    baseFlow: 186, // MLD — Mega Litres per Day
+    population: 412000,
+    pipelen: 284,  // km of pipes
+    color: '#1a6fd4',
+  },
+  {
+    id: 'Hebbal',
+    name: 'Hebbal–KR Puram',
+    sub: 'NE Corridor · BWSSB Zone 2',
+    x: 0.36, y: 0.04, w: 0.30, h: 0.24,
+    baseFlow: 224,
+    population: 580000,
+    pipelen: 310,
+    color: '#0a9e7a',
+  },
+  {
+    id: 'Whitefield',
+    name: 'Whitefield',
+    sub: 'East IT Zone · BWSSB Zone 3',
+    x: 0.68, y: 0.04, w: 0.28, h: 0.38,
+    baseFlow: 198,
+    population: 520000,
+    pipelen: 256,
+    color: '#7b4fc9',
+  },
+  {
+    id: 'Central',
+    name: 'Central Bengaluru',
+    sub: 'CBD · BWSSB Zone 4',
+    x: 0.28, y: 0.30, w: 0.38, h: 0.28,
+    baseFlow: 312,
+    population: 780000,
+    pipelen: 422,
+    color: '#d93025',
+  },
+  {
+    id: 'Jayanagar',
+    name: 'Jayanagar–BTM',
+    sub: 'South · BWSSB Zone 5',
+    x: 0.04, y: 0.60, w: 0.30, h: 0.35,
+    baseFlow: 168,
+    population: 380000,
+    pipelen: 198,
+    color: '#e07b00',
+  },
+  {
+    id: 'Bommanahalli',
+    name: 'Bommanahalli',
+    sub: 'SE Peripheral · BWSSB Zone 6',
+    x: 0.36, y: 0.60, w: 0.30, h: 0.35,
+    baseFlow: 142,
+    population: 320000,
+    pipelen: 172,
+    color: '#1e8a40',
+  },
+  {
+    id: 'Rajarajeshwari',
+    name: 'Rajarajeshwari Ngr',
+    sub: 'West · BWSSB Zone 7',
+    x: 0.68, y: 0.44, w: 0.28, h: 0.51,
+    baseFlow: 154,
+    population: 360000,
+    pipelen: 185,
+    color: '#c05621',
+  },
+];
+
+// ════════════════════════════════
+// PIPE NETWORK (BWSSB-approximate)
+// ════════════════════════════════
+const PIPES = [
+  // North-South backbone
+  [[0.19, 0.16],[0.19, 0.84]],
+  [[0.51, 0.16],[0.51, 0.58]],
+  [[0.82, 0.22],[0.82, 0.84]],
+  // East-West connectors
+  [[0.04, 0.44],[0.68, 0.44]],
+  [[0.19, 0.28],[0.68, 0.28]],
+  [[0.19, 0.75],[0.66, 0.75]],
+  // Cross links
+  [[0.51, 0.44],[0.68, 0.44]],
+  [[0.36, 0.16],[0.66, 0.16]],
+  [[0.36, 0.75],[0.66, 0.75]],
+];
+
+// ════════════════════════
+// STATE
+// ════════════════════════
+let zoneStates = ZONES.map(z => ({
+  ...z,
+  flow: z.baseFlow * (0.92 + Math.random()*0.16),
+  anomalyScore: 0,
+  status: 'ok',
+  allocation: 100 / ZONES.length,
+  leakRate: 0,
+  history: Array(20).fill(z.baseFlow),
+  droneCount: 0,
+}));
+
+const DRONE_COUNT = 8;
+let drones = Array.from({length: DRONE_COUNT}, (_, i) => ({
+  id: i,
+  x: Math.random(), y: Math.random(),
+  tx: Math.random(), ty: Math.random(),
+  state: 'patrol',
+  targetZone: null,
+  trail: [],
+}));
+
+let swarmActive = true;
+let speedMult = 2;
+let simSecs = 0;
+let anomalyCount = 0;
+let leakSaved = 0;
+let feedEntries = [];
+
+// ════════════════════════
+// CANVAS
+// ════════════════════════
+const mapCanvas   = document.getElementById('cityMap');
+const droneCanvas = document.getElementById('droneLayer');
+const mCtx = mapCanvas.getContext('2d');
+const dCtx = droneCanvas.getContext('2d');
+
+function resize() {
+  const a = document.querySelector('.map-area');
+  mapCanvas.width = droneCanvas.width = a.clientWidth;
+  mapCanvas.height = droneCanvas.height = a.clientHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+const W = () => mapCanvas.width;
+const H = () => mapCanvas.height;
+const px = (rx, ry, rw, rh) => [rx*W(), ry*H(), rw*W(), rh*H()];
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y, x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h, x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h, x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y, x+r,y);
+  ctx.closePath();
+}
+
+// ════════════════════════
+// DRAW CITY MAP
+// ════════════════════════
+function drawCity() {
+  const ctx = mCtx, cw = W(), ch = H();
+  ctx.clearRect(0,0,cw,ch);
+
+  // Soft background
+  ctx.fillStyle = '#dde8f2';
+  ctx.fillRect(0,0,cw,ch);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(100,150,200,0.12)';
+  ctx.lineWidth = 1;
+  for (let x=0; x<cw; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke(); }
+  for (let y=0; y<ch; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
+
+  // Draw zones
+  zoneStates.forEach(z => {
+    const [zx, zy, zw, zh] = px(z.x, z.y, z.w, z.h);
+    let fill, stroke, lw;
+    if (z.status === 'alert') {
+      fill   = 'rgba(217,48,37,0.13)';
+      stroke = `rgba(217,48,37,${0.5 + z.anomalyScore*0.4})`;
+      lw = 2.5;
+    } else if (z.status === 'warning') {
+      fill   = 'rgba(224,123,0,0.11)';
+      stroke = `rgba(224,123,0,${0.4 + z.anomalyScore*0.3})`;
+      lw = 2;
+    } else {
+      fill   = `${z.color}18`;
+      stroke = `${z.color}55`;
+      lw = 1.5;
+    }
+
+    // Shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,40,80,0.12)';
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lw;
+    rr(ctx, zx, zy, zw, zh, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Zone name label (background pill)
+    const labelW = Math.min(zw - 14, 130);
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    rr(ctx, zx + zw/2 - labelW/2, zy+8, labelW, 18, 4);
+    ctx.fill();
+
+    ctx.fillStyle = z.status === 'alert' ? '#d93025' : z.status === 'warning' ? '#a05a00' : '#1a2b3c';
+    ctx.font = '700 10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(z.name, zx + zw/2, zy + 21);
+
+    // Sub label
+    ctx.fillStyle = 'rgba(50,80,110,0.65)';
+    ctx.font = '400 8.5px Space Grotesk, sans-serif';
+    ctx.fillText(z.sub, zx + zw/2, zy + 33);
+
+    // Flow bar
+    const flowPct = Math.min(1, z.flow / (z.baseFlow * 1.5));
+    const bx = zx+10, by = zy+zh-16, bw = zw-20;
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    rr(ctx, bx, by, bw, 5, 3); ctx.fill();
+    ctx.fillStyle = z.status === 'alert' ? 'rgba(217,48,37,0.75)'
+                  : z.status === 'warning' ? 'rgba(224,123,0,0.7)'
+                  : `${z.color}bb`;
+    rr(ctx, bx, by, bw*flowPct, 5, 3); ctx.fill();
+
+    // Flow value
+    ctx.fillStyle = 'rgba(30,50,80,0.7)';
+    ctx.font = '500 8.5px JetBrains Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${z.flow.toFixed(0)} MLD`, zx+zw-8, zy+zh-20);
+
+    // Anomaly badge
+    if (z.anomalyScore > 0.3) {
+      ctx.fillStyle = z.status === 'alert' ? 'rgba(217,48,37,0.9)' : 'rgba(224,123,0,0.9)';
+      ctx.font = '700 9px JetBrains Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`⚠ ${(z.anomalyScore*100).toFixed(0)}%`, zx+8, zy+zh-20);
+    }
+
+    // Leak ripple
+    if (z.leakRate > 0) {
+      const lx = zx + zw*0.5, ly = zy + zh*0.5;
+      const t = (Date.now()/400) % 1;
+      [0.3, 0.6, 1.0].forEach((phase, i) => {
+        const p = (t + phase) % 1;
+        ctx.beginPath();
+        ctx.arc(lx, ly, 8 + p*20, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(26,111,212,${(1-p)*0.4})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    }
+  });
+
+  // Draw pipes
+  PIPES.forEach(([a, b], i) => {
+    const ax=a[0]*cw, ay=a[1]*ch, bx=b[0]*cw, by=b[1]*ch;
+    const nearAlert = zoneStates.some(z => z.status==='alert' && pipeNearZone(z,a,b));
+    ctx.beginPath();
+    ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+    ctx.strokeStyle = nearAlert ? 'rgba(217,48,37,0.55)' : 'rgba(100,140,180,0.4)';
+    ctx.lineWidth = nearAlert ? 3 : 2;
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Flow particle
+    const tOff = (Date.now()/1100 + i*0.15) % 1;
+    const fx = ax + (bx-ax)*tOff, fy = ay + (by-ay)*tOff;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = nearAlert ? 'rgba(217,48,37,0.85)' : 'rgba(26,111,212,0.6)';
+    ctx.fill();
+  });
+}
+
+function pipeNearZone(zone, a, b) {
+  const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+  return mx > zone.x-0.05 && mx < zone.x+zone.w+0.05
+      && my > zone.y-0.05 && my < zone.y+zone.h+0.05;
+}
+
+// ════════════════════════
+// DRONE LOGIC
+// ════════════════════════
+function updateDrones() {
+  const alerts = zoneStates.filter(z => z.status==='alert');
+  const warns  = zoneStates.filter(z => z.status==='warning');
+
+  drones.forEach((d, i) => {
+    const r = Math.random();
+    let tz;
+    if (alerts.length > 0 && r < 0.60) {
+      tz = alerts[Math.floor(Math.random()*alerts.length)];
+      d.state = 'converge';
+    } else if (warns.length > 0 && r < 0.82) {
+      tz = warns[Math.floor(Math.random()*warns.length)];
+      d.state = 'inspect';
+    } else {
+      tz = zoneStates[i % zoneStates.length];
+      d.state = 'patrol';
+    }
+    d.targetZone = tz.id;
+    d.tx = tz.x + tz.w*(0.15 + Math.random()*0.7);
+    d.ty = tz.y + tz.h*(0.15 + Math.random()*0.7);
+
+    const speed = d.state === 'converge' ? 0.0028*speedMult : 0.0018*speedMult;
+    const dx = d.tx - d.x, dy = d.ty - d.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    if (dist > 0.008) { d.x += dx/dist*speed; d.y += dy/dist*speed; }
+
+    d.trail.push({x:d.x, y:d.y});
+    if (d.trail.length > 16) d.trail.shift();
+  });
+
+  zoneStates.forEach(z => {
+    z.droneCount = drones.filter(d => d.targetZone === z.id).length;
+  });
+}
+
+function drawDrones() {
+  const ctx = dCtx, cw = W(), ch = H();
+  ctx.clearRect(0,0,cw,ch);
+
+  drones.forEach(d => {
+    const dx = d.x*cw, dy = d.y*ch;
+    const col = d.state==='converge' ? '#d93025'
+              : d.state==='inspect'  ? '#e07b00'
+              : '#1a6fd4';
+
+    // Trail
+    d.trail.forEach((t, i) => {
+      const a = (i/d.trail.length)*0.35;
+      ctx.beginPath();
+      ctx.arc(t.x*cw, t.y*ch, 1.5, 0, Math.PI*2);
+      ctx.fillStyle = col.replace(')', `,${a})`).replace('rgb(','rgba(') || `${col}${Math.round(a*255).toString(16).padStart(2,'0')}`;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = col;
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Scan ring
+    ctx.beginPath();
+    ctx.arc(dx, dy, d.state==='converge'?22:15, 0, Math.PI*2);
+    ctx.strokeStyle = d.state==='converge' ? 'rgba(217,48,37,0.3)'
+                    : d.state==='inspect'  ? 'rgba(224,123,0,0.3)'
+                    : 'rgba(26,111,212,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Pulse ring (converge)
+    if (d.state==='converge') {
+      const pulse = (Math.sin(Date.now()/280 + d.id*1.1)+1)*0.5;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 22 + pulse*10, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(217,48,37,${0.12*(1-pulse)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Body shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 4;
+    ctx.translate(dx, dy);
+
+    // Arms
+    [0,90,180,270].forEach(angle => {
+      ctx.save();
+      ctx.rotate(angle*Math.PI/180);
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(7,-5);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(7,-5, 3, 0, Math.PI*2);
+      ctx.strokeStyle = col+'88'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+    });
+    ctx.restore();
+
+    // Center
+    ctx.beginPath(); ctx.arc(dx,dy,4.5,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.beginPath(); ctx.arc(dx,dy,2,0,Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+
+    // ID
+    ctx.fillStyle = col;
+    ctx.font = '600 8.5px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`D${d.id+1}`, dx, dy-13);
+  });
+}
+
+// ════════════════════════════════════
+// ANOMALY DETECTION (Isolation Forest)
+// ════════════════════════════════════
+function computeAnomalyScores() {
+  const flows = zoneStates.map(z => z.flow);
+  const mean  = flows.reduce((a,b)=>a+b,0)/flows.length;
+  const std   = Math.sqrt(flows.map(f=>(f-mean)**2).reduce((a,b)=>a+b,0)/flows.length);
+
+  zoneStates.forEach(z => {
+    const zScore    = Math.abs(z.flow - z.baseFlow) / (z.baseFlow*0.1 + std*0.3);
+    const hMean     = z.history.reduce((a,b)=>a+b,0)/z.history.length;
+    const deviation = Math.abs(z.flow - hMean) / (hMean*0.05 + 1);
+    z.anomalyScore  = Math.min(1, (zScore*0.6 + deviation*0.4) / 4);
+
+    const prev = z.status;
+    if      (z.anomalyScore > 0.72) z.status = 'alert';
+    else if (z.anomalyScore > 0.42) z.status = 'warning';
+    else                            z.status = 'ok';
+
+    if (prev !== 'alert' && z.status === 'alert') {
+      addFeed('crit', `CRITICAL: ${z.name} — anomaly score ${(z.anomalyScore*100).toFixed(0)}% · flow ${z.flow.toFixed(1)} MLD · Dispatching drones`);
+      anomalyCount++;
+    } else if (prev !== 'warning' && z.status === 'warning') {
+      addFeed('warn', `WARNING: ${z.name} — flow deviation +${((z.flow/z.baseFlow-1)*100).toFixed(1)}% above baseline`);
+    }
+    z.history.push(z.flow);
+    if (z.history.length > 20) z.history.shift();
+  });
+}
+
+// ════════════════════════════════
+// DECISION AGENT — Redistribution
+// ════════════════════════════════
+function computeRedistribution() {
+  const total = zoneStates.reduce((s,z) => s + z.baseFlow, 0);
+  let items = [];
+  zoneStates.forEach(z => {
+    // Population-weighted base allocation
+    let alloc = (z.baseFlow / total) * 100;
+    if (z.status === 'alert') {
+      alloc *= 0.70;
+      items.push({ zone: z.name.split(' ')[0], action: 'Reduce pressure — active leak', delta: -30, sev:'alert' });
+    } else if (z.status === 'warning') {
+      alloc *= 0.88;
+      items.push({ zone: z.name.split(' ')[0], action: 'Throttle 12% — anomaly detected', delta: -12, sev:'warn' });
+    }
+    z.allocation = alloc;
+  });
+  const sum = zoneStates.reduce((s,z)=>s+z.allocation,0);
+  zoneStates.forEach(z => z.allocation = (z.allocation/sum)*100);
+  return items;
+}
+
+// ════════════════════
+// FLOW SIMULATION
+// ════════════════════
+function simulateFlow() {
+  zoneStates.forEach(z => {
+    const noise = (Math.random()-0.5)*z.baseFlow*0.04;
+    z.flow = z.flow*0.94 + (z.baseFlow + noise)*0.06;
+    if (z.leakRate > 0) {
+      z.flow += z.leakRate*(1 + Math.random()*0.3);
+      leakSaved += z.leakRate * 0.01;
+      if (Math.random() < 0.004) {
+        z.leakRate = Math.max(0, z.leakRate - 12);
+        if (z.leakRate === 0) addFeed('info', `${z.name}: Leak contained by swarm ✓`);
+      }
+    }
+  });
+}
+
+// ════════════════════
+// UI
+// ════════════════════
+function addFeed(type, msg) {
+  const now = new Date();
+  const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  feedEntries.unshift({type, msg, t});
+  if (feedEntries.length > 12) feedEntries.pop();
+  document.getElementById('feedList').innerHTML = feedEntries.map(f =>
+    `<div class="feed-item ${f.type}">
+      <div class="feed-time">${f.t}</div>
+      <div class="feed-msg">${f.msg}</div>
+    </div>`
+  ).join('');
+}
+
+function updateLeftPanel() {
+  document.getElementById('zoneList').innerHTML = zoneStates.map(z => {
+    const fp = Math.min(100,(z.flow/(z.baseFlow*1.55))*100);
+    const bc = z.status==='alert'?'badge-alert':z.status==='warning'?'badge-warn':z.droneCount>0?'badge-scan':'badge-ok';
+    const bt = z.status==='alert'?'ALERT':z.status==='warning'?'WARN':z.droneCount>0?'SCAN':'OK';
+    const bc2 = z.status==='alert'?'var(--red)':z.status==='warning'?'var(--amber)':'var(--blue)';
+    const cc = z.status==='alert'?'alert':z.status==='warning'?'warning':'';
+    return `<div class="zone-card ${cc}">
+      <div class="zone-header">
+        <div>
+          <div class="zone-name">${z.name}</div>
+          <div class="zone-sub">${z.sub}</div>
+        </div>
+        <div class="zone-badge ${bc}">${bt}</div>
+      </div>
+      <div class="zone-metrics">
+        <div class="zone-metric"><span>Flow</span><span>${z.flow.toFixed(1)} MLD</span></div>
+        <div class="zone-metric"><span>Anomaly</span><span>${(z.anomalyScore*100).toFixed(0)}%</span></div>
+        <div class="zone-metric"><span>Pop.</span><span>${(z.population/1000).toFixed(0)}K</span></div>
+        <div class="zone-metric"><span>Drones</span><span>${z.droneCount}</span></div>
+      </div>
+      <div class="zone-bar-bg"><div class="zone-bar" style="width:${fp}%;background:${bc2}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function updateRightPanel() {
+  const decisions = computeRedistribution();
+
+  document.getElementById('decisionList').innerHTML = decisions.length === 0
+    ? `<div style="font-size:0.7rem;color:var(--muted);padding:4px 0">All zones nominal — equal allocation maintained</div>`
+    : decisions.map(d =>
+        `<div class="decision-item">
+          <div class="decision-zone">${d.zone}</div>
+          <div class="decision-action">${d.action}</div>
+          <div class="decision-pct" style="color:${d.delta<0?'var(--red)':'var(--green)'}">${d.delta>0?'+':''}${d.delta}%</div>
+        </div>`
+      ).join('');
+
+  document.getElementById('redistribBars').innerHTML = zoneStates.map(z => {
+    const col = z.status==='alert'?'var(--red)':z.status==='warning'?'var(--amber)':'var(--teal)';
+    const shortName = z.name.split('–')[0].split(' ')[0];
+    return `<div class="rbar-row">
+      <div class="rbar-label" title="${z.name}">${shortName}</div>
+      <div class="rbar-bg"><div class="rbar-fill" style="width:${z.allocation.toFixed(1)}%;background:${col}"></div></div>
+      <div class="rbar-val" style="color:${col}">${z.allocation.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+}
+
+function updateHeader() {
+  document.getElementById('hAnomalies').textContent = anomalyCount;
+  document.getElementById('hCoverage').textContent = Math.min(99, Math.round((simSecs/30)*100)) + '%';
+  document.getElementById('hSaved').textContent = leakSaved.toFixed(0) + ' kL';
+  const alerts = zoneStates.filter(z=>z.status==='alert').length;
+  const warns  = zoneStates.filter(z=>z.status==='warning').length;
+  document.getElementById('agDet').textContent = alerts>0?`${alerts} critical`:warns>0?`${warns} warning`:'No anomalies';
+  document.getElementById('agDecision').textContent = alerts>0?'Redistributing':'Balanced';
+}
+
+// ════════════════════
+// CONTROLS
+// ════════════════════
+function toggleSwarm() {
+  swarmActive = !swarmActive;
+  const btn = document.getElementById('btnSwarm');
+  btn.textContent = swarmActive ? '⬡ Swarm ON' : '⬡ Swarm OFF';
+  btn.classList.toggle('active', swarmActive);
+  addFeed('info', `Swarm ${swarmActive?'activated':'paused'} by operator`);
+}
+
+function injectLeak() {
+  const z = zoneStates[Math.floor(Math.random()*zoneStates.length)];
+  z.leakRate = 8 + Math.random()*14; // MLD equivalent
+  addFeed('crit', `LEAK INJECTED: ${z.name} — +${z.leakRate.toFixed(1)} MLD · Swarm converging`);
+}
+
+function setSpeed(v) { speedMult = parseFloat(v); }
+
+// ════════════════════
+// LOOP
+// ════════════════════
+let lastTick = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  drawCity();
+  if (swarmActive) updateDrones();
+  drawDrones();
+  if (ts - lastTick > 900 / speedMult) {
+    lastTick = ts;
+    simSecs += speedMult;
+    simulateFlow();
+    computeAnomalyScores();
+    updateLeftPanel();
+    updateRightPanel();
+    updateHeader();
+    const m = Math.floor(simSecs/60), s = Math.floor(simSecs%60);
+    document.getElementById('simTime').textContent = `T+${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+}
+
+// Init
+addFeed('info', 'Aquix initialized — BWSSB Bangalore · 7 zones · 8 drones deployed');
+addFeed('info', 'Isolation Forest anomaly detection engine active');
+addFeed('info', 'Swarm intelligence: pheromone convergence protocol enabled');
+updateLeftPanel();
+updateRightPanel();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

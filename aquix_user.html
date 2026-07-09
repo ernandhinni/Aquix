@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquix — BWSSB Smart Water Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<!-- Leaflet Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Heatmap -->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<style>
+:root {
+  --bg:       #F4F2ED;
+  --surface:  #FFFFFF;
+  --surf2:    #ECEAE4;
+  --surf3:    #F8F7F4;
+  --border:   #DDD9CF;
+  --border2:  #C8C2B0;
+  --text:     #18170F;
+  --text2:    #565340;
+  --text3:    #9B9178;
+  --accent:   #1A6EFF;
+  --acc2:     #0D4FBD;
+  --water:    #0EA5E9;
+  --teal:     #0D9488;
+  --green:    #16A34A;
+  --amber:    #D97706;
+  --red:      #DC2626;
+  --purple:   #7C3AED;
+  --shadow:   0 1px 3px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg:0 4px 16px rgba(0,0,0,0.08),0 16px 48px rgba(0,0,0,0.06);
+  --r: 12px; --rsm: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ─── SHELL ───────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:236px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.main{margin-left:236px;flex:1;min-height:100vh}
+
+/* ─── SIDEBAR ─────────────────────────────── */
+.logo-wrap{padding:22px 18px 18px;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#0EA5E9,#1A6EFF);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;box-shadow:0 3px 10px rgba(14,165,233,0.35)}
+.logo-name{font-size:19px;font-weight:800;letter-spacing:-.5px;color:var(--text);line-height:1}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+
+.nav{padding:14px 10px;flex:1}
+.nav-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding:8px 8px 5px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rsm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;margin-bottom:1px}
+.nav-item:hover{background:var(--surf2);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(26,110,255,.1),rgba(14,165,233,.07));color:var(--accent);font-weight:600}
+.nav-item .ni{font-size:15px;width:19px;text-align:center;flex-shrink:0}
+.badge{margin-left:auto;background:var(--red);color:#fff;font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:20px;min-width:18px;text-align:center}
+.badge.am{background:var(--amber)}.badge.gn{background:var(--green)}.badge.bl{background:var(--accent)}
+
+.sidebar-footer{padding:14px;border-top:1px solid var(--border)}
+.bwssb-tag{background:var(--surf2);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 11px;display:flex;align-items:center;gap:8px}
+.bwssb-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse-dot 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+.bwssb-name{font-size:11px;font-weight:600;color:var(--text)}
+.bwssb-stat{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px}
+
+/* ─── TOPBAR ──────────────────────────────── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:58px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.page-title{font-size:16px;font-weight:700;letter-spacing:-.3px;flex:1}
+.page-title span{font-weight:400;color:var(--text3)}
+.tbar-btn{height:33px;padding:0 13px;border-radius:var(--rsm);border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tbar-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surf2)}
+.tbar-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tbar-btn.primary:hover{background:var(--acc2)}
+.weather-pill{display:flex;align-items:center;gap:7px;background:var(--surf2);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:11.5px;font-family:'DM Mono',monospace;color:var(--text2)}
+.weather-pill .wt{font-weight:500;color:var(--text)}
+
+/* ─── PAGES ───────────────────────────────── */
+.page{display:none;padding:24px;animation:fadein .22s ease}
+.page.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ─── CARDS ───────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-hd{padding:16px 18px 0;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.card-title{font-size:13.5px;font-weight:700;letter-spacing:-.2px;flex:1}
+.card-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:3px 8px;border-radius:20px;font-weight:500;letter-spacing:.4px}
+.card-body{padding:0 18px 18px}
+
+/* ─── STAT GRID ───────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:17px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s;cursor:default}
+.stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.sc-blue::before{background:linear-gradient(90deg,var(--accent),var(--water))}
+.sc-teal::before{background:linear-gradient(90deg,var(--teal),#06B6D4)}
+.sc-green::before{background:linear-gradient(90deg,var(--green),#22C55E)}
+.sc-amber::before{background:linear-gradient(90deg,var(--amber),#F59E0B)}
+.sc-red::before{background:linear-gradient(90deg,var(--red),#F87171)}
+.sc-purple::before{background:linear-gradient(90deg,var(--purple),#A855F7)}
+.stat-icon{font-size:21px;margin-bottom:9px;display:block}
+.stat-value{font-size:25px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:3px}
+.stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
+.stat-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:5px}
+
+/* ─── GRID LAYOUTS ────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g31{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.g13{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+.mb16{margin-bottom:16px} .mb22{margin-bottom:22px}
+
+/* ─── ZONE TABLE ──────────────────────────── */
+.ztable{width:100%;border-collapse:collapse}
+.ztable th{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:500;padding:7px 11px;text-align:left;border-bottom:1px solid var(--border)}
+.ztable td{padding:10px 11px;font-size:12.5px;border-bottom:1px solid var(--surf2);vertical-align:middle}
+.ztable tr:last-child td{border-bottom:none}
+.ztable tr:hover td{background:var(--surf2)}
+.risk-badge{display:inline-flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.4px}
+.risk-badge.HIGH{background:rgba(220,38,38,.1);color:var(--red)}
+.risk-badge.MEDIUM{background:rgba(217,119,6,.1);color:var(--amber)}
+.risk-badge.LOW{background:rgba(22,163,74,.1);color:var(--green)}
+.use-bar{height:5px;border-radius:3px;background:var(--surf2);overflow:hidden;width:90px}
+.use-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.22,1,.36,1)}
+.uf-high{background:linear-gradient(90deg,var(--amber),var(--red))}
+.uf-med{background:linear-gradient(90deg,var(--water),var(--teal))}
+.uf-low{background:linear-gradient(90deg,var(--green),#4ADE80)}
+
+/* ─── FORMS ────────────────────────────────── */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:10.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.fi,.fs{width:100%;height:39px;padding:0 11px;border:1px solid var(--border);border-radius:var(--rsm);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:500;outline:none;transition:border-color .15s;appearance:none}
+.fi:focus,.fs:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,255,.1)}
+.fr{width:100%;accent-color:var(--accent);cursor:pointer}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--accent);min-width:26px;text-align:right}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{height:40px;padding:0 18px;border-radius:var(--rsm);border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,110,255,.3)}
+.btn-s{background:var(--surf2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{background:var(--border)}
+.btn-d{background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.15)}
+.btn-d:hover{background:var(--red);color:#fff}
+.btn-f{width:100%;justify-content:center}
+
+/* ─── ALERTS ───────────────────────────────── */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:var(--rsm);font-size:12.5px;line-height:1.5;margin-bottom:8px}
+.alert.success{background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.2)}
+.alert.warning{background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.2)}
+.alert.danger{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2)}
+.alert.info{background:rgba(26,110,255,.06);border:1px solid rgba(26,110,255,.15)}
+.alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+
+/* ─── RESULT PANELS ───────────────────────── */
+.result-panel{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:14px;animation:fadein .2s ease}
+.result-panel.show{display:block}
+.result-hd{padding:13px 16px;display:flex;align-items:center;gap:9px}
+.result-hd.success{background:rgba(22,163,74,.07);border-bottom:1px solid rgba(22,163,74,.15)}
+.result-hd.warning{background:rgba(217,119,6,.07);border-bottom:1px solid rgba(217,119,6,.15)}
+.result-hd.danger{background:rgba(220,38,38,.07);border-bottom:1px solid rgba(220,38,38,.15)}
+.result-hd.info{background:rgba(26,110,255,.05);border-bottom:1px solid rgba(26,110,255,.12)}
+.result-title{font-size:13.5px;font-weight:700;flex:1}
+.result-body{padding:14px 16px}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--surf2)}
+.mrow:last-child{border-bottom:none}
+.mkey{font-size:11.5px;color:var(--text2);font-weight:500}
+.mval{font-family:'DM Mono',monospace;font-size:12.5px;font-weight:500;color:var(--text)}
+.mval.gn{color:var(--green)}.mval.rd{color:var(--red)}.mval.am{color:var(--amber)}.mval.bl{color:var(--accent)}
+.mval.danger{color:var(--red)}.mval.warning{color:var(--amber)}.mval.success{color:var(--green)}
+
+/* ─── TICKET ────────────────────────────────── */
+.ticket-box{background:linear-gradient(135deg,rgba(26,110,255,.07),rgba(14,165,233,.05));border:1px dashed rgba(26,110,255,.3);border-radius:var(--rsm);padding:12px 16px;text-align:center}
+.ticket-id{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;color:var(--accent);letter-spacing:1px}
+.ticket-label{font-size:10.5px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.7px}
+
+/* ─── GAUGE / SVG ─────────────────────────── */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.gauge-label{font-size:10.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);text-align:center}
+.gauge-val{font-size:21px;font-weight:800;letter-spacing:-.5px}
+.gauge-sub{font-size:9.5px;color:var(--text3);font-family:'DM Mono',monospace;text-align:center}
+
+/* ─── CHART BARS ──────────────────────────── */
+.cbar-wrap{display:flex;flex-direction:column;gap:7px}
+.cbar-row{display:flex;align-items:center;gap:9px}
+.cbar-label{font-size:11.5px;width:86px;text-align:right;color:var(--text2);font-weight:500;flex-shrink:0}
+.cbar-track{flex:1;height:18px;background:var(--surf2);border-radius:3px;overflow:hidden;position:relative}
+.cbar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:7px;font-family:'DM Mono',monospace;font-size:9.5px;color:#fff;font-weight:600;transition:width 1s cubic-bezier(.22,1,.36,1);white-space:nowrap}
+
+/* ─── CHAT ──────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:440px}
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surf2);border-radius:var(--rsm);margin-bottom:10px}
+.chat-msg{max-width:82%;padding:9px 13px;border-radius:13px;font-size:13px;line-height:1.5;animation:fadein .2s ease}
+.chat-msg.bot{background:var(--surface);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:3px}
+.chat-msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-input-row{display:flex;gap:7px}
+.chat-input{flex:1;height:40px;padding:0 13px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'Syne',sans-serif;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.chat-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,110,255,.1)}
+.lang-sel{height:40px;padding:0 9px;border:1px solid var(--border);border-radius:var(--rsm);font-family:'DM Mono',monospace;font-size:11.5px;background:var(--surface);color:var(--text);outline:none;cursor:pointer;appearance:none;min-width:72px;text-align:center}
+
+/* ─── STATUS TIMELINE ─────────────────────── */
+.status-timeline{display:flex;flex-direction:column;gap:0}
+.status-step{display:flex;gap:12px;position:relative}
+.status-step:not(:last-child)::before{content:'';position:absolute;left:13px;top:28px;bottom:0;width:1px;background:var(--border)}
+.status-dot{width:27px;height:27px;border-radius:50%;border:2px solid var(--border);background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;z-index:1}
+.status-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.status-dot.active{background:var(--accent);border-color:var(--accent);color:#fff;animation:pulse-dot 1.5s ease-in-out infinite}
+.status-content{padding:3px 0 14px}
+.status-title{font-size:12.5px;font-weight:600}
+.status-time{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text3);margin-top:1px}
+
+/* ─── SPINNER ───────────────────────────────── */
+.loading{display:flex;align-items:center;gap:9px;padding:12px 0;color:var(--text3);font-size:13px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── AGENT RESULT CARDS ─────────────────── */
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.agent-hd{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.agent-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.agent-icon.blue{background:rgba(26,110,255,.1)}
+.agent-icon.green{background:rgba(22,163,74,.1)}
+.agent-icon.red{background:rgba(220,38,38,.1)}
+.agent-icon.amber{background:rgba(217,119,6,.1)}
+.agent-icon.purple{background:rgba(124,58,237,.1)}
+.agent-name{font-size:12.5px;font-weight:700;flex:1}
+.agent-status{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.agent-status.ok{background:rgba(22,163,74,.1);color:var(--green)}
+.agent-status.warn{background:rgba(217,119,6,.1);color:var(--amber)}
+.agent-status.crit{background:rgba(220,38,38,.1);color:var(--red)}
+.agent-body{padding:12px 16px}
+.agent-output{background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:11px 13px;font-size:12px;line-height:1.6;color:var(--text2);margin-top:10px;font-family:'DM Mono',monospace}
+
+/* ─── MAP ───────────────────────────────────── */
+#water-map{height:480px;border-radius:var(--rsm);overflow:hidden;border:1px solid var(--border)}
+.map-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.map-btn{height:31px;padding:0 12px;border-radius:var(--rsm);border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:'Syne',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.map-btn:hover,.map-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.map-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text2);align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.incident-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.inc-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px;text-align:center}
+.inc-stat-val{font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
+.inc-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;font-weight:500}
+.incident-list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto}
+.incident-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:11px 13px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:border-color .15s}
+.incident-item:hover{border-color:var(--accent)}
+.inc-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.inc-icon.leak{background:rgba(220,38,38,.1)}
+.inc-icon.flood{background:rgba(14,165,233,.1)}
+.inc-icon.quality{background:rgba(124,58,237,.1)}
+.inc-icon.supply{background:rgba(217,119,6,.1)}
+.inc-title{font-size:12.5px;font-weight:600;margin-bottom:2px}
+.inc-zone{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.inc-status{margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;height:fit-content;margin-top:2px}
+.inc-status.ACTIVE{background:rgba(220,38,38,.1);color:var(--red)}
+.inc-status.IN_PROGRESS{background:rgba(217,119,6,.1);color:var(--amber)}
+.inc-status.MONITORING{background:rgba(14,165,233,.1);color:var(--water)}
+.inc-status.RESOLVED{background:rgba(22,163,74,.1);color:var(--green)}
+.inc-status.SCHEDULED{background:rgba(124,58,237,.1);color:var(--purple)}
+.inc-status.TESTING{background:rgba(217,119,6,.1);color:var(--amber)}
+
+/* ─── BWSSB SCHEDULE ─────────────────────── */
+.sched-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
+.sched-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px}
+.sched-zone{font-size:12.5px;font-weight:700;margin-bottom:3px}
+.sched-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+.sched-days{font-size:11px;color:var(--text3);margin-top:2px}
+.sched-next{font-size:11px;color:var(--text2);margin-top:4px;display:flex;align-items:center;gap:4px}
+
+/* ─── DASHBOARD CHART ────────────────────── */
+.dash-chart-wrap{position:relative;height:180px}
+canvas{border-radius:var(--rsm)}
+
+/* ─── QUICK STATS ROW ─────────────────────── */
+.quick-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.quick-chip{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:11.5px;display:flex;align-items:center;gap:6px;font-weight:500;white-space:nowrap}
+.quick-chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ─── AI NARRATIVE ────────────────────────── */
+.ai-narrative{background:linear-gradient(135deg,rgba(26,110,255,.04),rgba(14,165,233,.03));border:1px solid rgba(26,110,255,.15);border-radius:var(--rsm);padding:12px 14px;font-size:12.5px;color:var(--text2);line-height:1.6;margin-top:10px;font-style:italic;position:relative}
+.ai-narrative::before{content:'✨ AI';position:absolute;top:-8px;left:12px;background:linear-gradient(135deg,var(--accent),var(--water));color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;padding:1px 7px;border-radius:20px;font-style:normal;letter-spacing:.5px}
+
+/* ─── DASHBOARD OVERVIEW CHARTS ────────────── */
+.mini-gauge{text-align:center}
+.mg-ring{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.mg-ring svg{transform:rotate(-90deg)}
+.mg-center{position:absolute;text-align:center}
+.mg-val{font-size:16px;font-weight:800;letter-spacing:-.5px;display:block}
+.mg-unit{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace}
+
+/* ─── RESPONSIVE ──────────────────────────── */
+@media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.sidebar{display:none}.main{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════════════════════════════════════ SIDEBAR ═════ -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <a class="logo" href="#">
+      <div class="logo-icon">💧</div>
+      <div>
+        <div class="logo-name">Aquix</div>
+        <div class="logo-sub">Water Intelligence</div>
+      </div>
+    </a>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="ni">🏠</span>Dashboard</button>
+    <button class="nav-item" onclick="showPage('map',this)"><span class="ni">🗺️</span>Live Map <span class="badge bl">12</span></button>
+
+    <div class="nav-label">AI Agents</div>
+    <button class="nav-item" onclick="showPage('anomaly',this)"><span class="ni">🔍</span>Anomaly Detection <span class="badge">4</span></button>
+    <button class="nav-item" onclick="showPage('demand',this)"><span class="ni">📈</span>Demand Forecast</button>
+    <button class="nav-item" onclick="showPage('leak',this)"><span class="ni">🚨</span>Leak Detection <span class="badge">7</span></button>
+    <button class="nav-item" onclick="showPage('flood',this)"><span class="ni">🌊</span>Flood Risk</button>
+    <button class="nav-item" onclick="showPage('quality',this)"><span class="ni">🧪</span>Water Quality</button>
+    <button class="nav-item" onclick="showPage('farmer',this)"><span class="ni">🌾</span>Farmer Insights</button>
+    <button class="nav-item" onclick="showPage('agents',this)"><span class="ni">🤖</span>All Agents <span class="badge am">Live</span></button>
+
+    <div class="nav-label">BWSSB Services</div>
+    <button class="nav-item" onclick="showPage('services',this)"><span class="ni">🚛</span>Book Services</button>
+    <button class="nav-item" onclick="showPage('complaints',this)"><span class="ni">📋</span>Complaints <span class="badge am">14</span></button>
+    <button class="nav-item" onclick="showPage('schedule',this)"><span class="ni">🕐</span>Supply Schedule</button>
+    <button class="nav-item" onclick="showPage('chat',this)"><span class="ni">💬</span>AquaSphere AI</button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="bwssb-tag">
+      <div class="bwssb-dot"></div>
+      <div>
+        <div class="bwssb-name">BWSSB Live System</div>
+        <div class="bwssb-stat" id="bwssb-stat">12 zones · 42 tankers active</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════ MAIN ═════════ -->
+<div class="main">
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="page-title" id="topbar-title">Dashboard <span>/ Overview</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="weather-pill" id="weather-pill">
+      <span>⛅</span><span class="wt" id="wp-temp">28°C</span><span id="wp-desc">Bengaluru</span>
+    </div>
+    <button class="tbar-btn" onclick="refreshWeather()">🔄 Refresh</button>
+    <button class="tbar-btn primary" onclick="runAllAgents()">🤖 Run Agents</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════ PAGE: DASHBOARD ═══════════ -->
+<section class="page active" id="page-dashboard">
+  <div class="stat-grid">
+    <div class="stat-card sc-blue">
+      <span class="stat-icon">💧</span>
+      <div class="stat-value">12.4</div>
+      <div class="stat-label">Total Supply MLD</div>
+      <div class="stat-sub">Cauvery Stage 5</div>
+    </div>
+    <div class="stat-card sc-red">
+      <span class="stat-icon">🚨</span>
+      <div class="stat-value" id="ds-leaks">7</div>
+      <div class="stat-label">Active Leaks</div>
+      <div class="stat-sub">4 Critical, 3 High</div>
+    </div>
+    <div class="stat-card sc-amber">
+      <span class="stat-icon">🌊</span>
+      <div class="stat-value">42%</div>
+      <div class="stat-label">Flood Risk</div>
+      <div class="stat-sub">MODERATE — Bengaluru South</div>
+    </div>
+    <div class="stat-card sc-green">
+      <span class="stat-icon">✅</span>
+      <div class="stat-value">7.2</div>
+      <div class="stat-label">Water pH</div>
+      <div class="stat-sub">TDS 310 ppm — Safe</div>
+    </div>
+    <div class="stat-card sc-teal">
+      <span class="stat-icon">📊</span>
+      <div class="stat-value">28%</div>
+      <div class="stat-label">NRW Loss</div>
+      <div class="stat-sub">Target: <20%</div>
+    </div>
+    <div class="stat-card sc-purple">
+      <span class="stat-icon">🚛</span>
+      <div class="stat-value">42</div>
+      <div class="stat-label">Tankers Active</div>
+      <div class="stat-sub">6 deployed now</div>
+    </div>
+    <div class="stat-card sc-green">
+      <span class="stat-icon">⚖️</span>
+      <div class="stat-value">84%</div>
+      <div class="stat-label">Equity Score</div>
+      <div class="stat-sub">Distribution fairness</div>
+    </div>
+    <div class="stat-card sc-amber">
+      <span class="stat-icon">📋</span>
+      <div class="stat-value">14</div>
+      <div class="stat-label">Open Complaints</div>
+      <div class="stat-sub">Avg resolve: 3.2 days</div>
+    </div>
+  </div>
+
+  <div class="g2 mb22">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">📈 Weekly Supply vs Demand</div>
+        <span class="card-badge" style="background:rgba(26,110,255,.1);color:var(--accent)">Live</span>
+      </div>
+      <div class="card-body">
+        <div class="dash-chart-wrap">
+          <canvas id="dashChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🗺️ Zone Risk Overview</div></div>
+      <div class="card-body">
+        <table class="ztable">
+          <thead><tr><th>Zone</th><th>Risk</th><th>Usage</th><th>Status</th></tr></thead>
+          <tbody id="dash-zone-table">
+            <tr><td colspan="4"><div class="loading"><div class="spinner"></div>Loading zones…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💧 Supply Sources</div></div>
+      <div class="card-body">
+        <div class="cbar-wrap">
+          <div class="cbar-row"><div class="cbar-label">Cauvery S5</div><div class="cbar-track"><div class="cbar-fill" style="width:72%;background:linear-gradient(90deg,var(--accent),var(--water))">720 MLD</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Groundwater</div><div class="cbar-track"><div class="cbar-fill" style="width:18%;background:linear-gradient(90deg,var(--teal),#06B6D4)">180 MLD</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Recycled</div><div class="cbar-track"><div class="cbar-fill" style="width:10%;background:linear-gradient(90deg,var(--green),#22C55E)">100 MLD</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📉 NRW Breakdown</div></div>
+      <div class="card-body">
+        <div class="cbar-wrap">
+          <div class="cbar-row"><div class="cbar-label">Pipe Leaks</div><div class="cbar-track"><div class="cbar-fill" style="width:56%;background:linear-gradient(90deg,var(--red),#F87171)">~15.7%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Meter Error</div><div class="cbar-track"><div class="cbar-fill" style="width:29%;background:linear-gradient(90deg,var(--amber),#F59E0B)">~8.1%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Theft</div><div class="cbar-track"><div class="cbar-fill" style="width:15%;background:linear-gradient(90deg,var(--purple),#A855F7)">~4.2%</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">⚡ System Health</div></div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-around">
+          <div class="gauge-wrap">
+            <svg width="70" height="70" viewBox="0 0 70 70">
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surf2)" stroke-width="6"/>
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--green)" stroke-width="6" stroke-dasharray="113 176" stroke-linecap="round" transform="rotate(-90 35 35)"/>
+            </svg>
+            <div class="gauge-val" style="margin-top:-54px;position:relative">64%</div>
+            <div style="margin-top:18px"></div>
+            <div class="gauge-label">Pipeline<br>Pressure</div>
+          </div>
+          <div class="gauge-wrap">
+            <svg width="70" height="70" viewBox="0 0 70 70">
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surf2)" stroke-width="6"/>
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--amber)" stroke-width="6" stroke-dasharray="99 176" stroke-linecap="round" transform="rotate(-90 35 35)"/>
+            </svg>
+            <div class="gauge-val" style="margin-top:-54px;position:relative">56%</div>
+            <div style="margin-top:18px"></div>
+            <div class="gauge-label">Treatment<br>Capacity</div>
+          </div>
+          <div class="gauge-wrap">
+            <svg width="70" height="70" viewBox="0 0 70 70">
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--surf2)" stroke-width="6"/>
+              <circle cx="35" cy="35" r="28" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="148 176" stroke-linecap="round" transform="rotate(-90 35 35)"/>
+            </svg>
+            <div class="gauge-val" style="margin-top:-54px;position:relative">84%</div>
+            <div style="margin-top:18px"></div>
+            <div class="gauge-label">Network<br>Uptime</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: MAP ═══════════════════ -->
+<section class="page" id="page-map">
+  <div class="incident-stats mb16">
+    <div class="inc-stat"><div class="inc-stat-val" style="color:var(--red)">4</div><div class="inc-stat-label">Active Leaks</div></div>
+    <div class="inc-stat"><div class="inc-stat-val" style="color:var(--water)">2</div><div class="inc-stat-label">Flood Risk</div></div>
+    <div class="inc-stat"><div class="inc-stat-val" style="color:var(--purple)">2</div><div class="inc-stat-label">Quality Alerts</div></div>
+    <div class="inc-stat"><div class="inc-stat-val" style="color:var(--amber)">2</div><div class="inc-stat-label">Supply Issues</div></div>
+  </div>
+
+  <div class="g31 mb16">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🗺️ Bengaluru Water Problem Heatmap</div>
+        <span class="card-badge" style="background:rgba(220,38,38,.1);color:var(--red)">LIVE</span>
+      </div>
+      <div class="card-body">
+        <div class="map-controls">
+          <button class="map-btn active" onclick="setMapLayer('heatmap',this)">🔥 Heatmap</button>
+          <button class="map-btn" onclick="setMapLayer('incidents',this)">📍 Incidents</button>
+          <button class="map-btn" onclick="setMapLayer('zones',this)">🗺 Zone Risks</button>
+          <button class="map-btn" onclick="setMapLayer('all',this)">📊 All Layers</button>
+          <button class="map-btn" onclick="refreshMapData()">🔄 Refresh</button>
+          <div class="map-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#DC2626"></div> Leak</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#0EA5E9"></div> Flood</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#7C3AED"></div> Quality</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#D97706"></div> Supply</div>
+          </div>
+        </div>
+        <div id="water-map"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🚨 Active Incidents</div></div>
+      <div class="card-body" style="padding-top:0">
+        <div class="incident-list" id="incident-list">
+          <div class="loading"><div class="spinner"></div>Loading incidents…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: ANOMALY ═════════════ -->
+<section class="page" id="page-anomaly">
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🔍 Zone Sensor Inputs</div></div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Pre-filled with BWSSB sensor data. Modify to test anomaly detection.</p>
+        <div id="zone-inputs">
+          <!-- Dynamic zone inputs injected here -->
+        </div>
+        <button class="btn btn-p btn-f" onclick="runAnomalyDetection()">🔍 Run Anomaly Detection</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 Detection Results</div></div>
+      <div class="card-body">
+        <div id="anomaly-result"><div style="color:var(--text3);font-size:12.5px;padding:20px 0;text-align:center">Run detection to see ensemble AI results</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">⚖️ Redistribution Plan</div><span class="card-badge" style="background:rgba(22,163,74,.1);color:var(--green)">AI-PLANNED</span></div>
+    <div class="card-body">
+      <div id="redistrib-result"><div style="color:var(--text3);font-size:12.5px;padding:12px 0;text-align:center">Redistribution plan will appear here after detection</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: DEMAND ══════════════ -->
+<section class="page" id="page-demand">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📈 Demand Forecast Inputs</div></div>
+      <div class="card-body">
+        <div class="fgrid">
+          <div class="fg"><label class="fl">Temperature (°C)</label><input class="fi" id="d-temp" type="number" value="28" min="15" max="45"></div>
+          <div class="fg"><label class="fl">Humidity (%)</label><input class="fi" id="d-hum" type="number" value="78" min="20" max="100"></div>
+          <div class="fg"><label class="fl">Pop. Density (k/km²)</label><input class="fi" id="d-pop" type="number" value="12" min="1" max="50"></div>
+          <div class="fg"><label class="fl">Rainfall (mm/day)</label><input class="fi" id="d-rain" type="number" value="45" min="0" max="300"></div>
+        </div>
+        <div class="fg"><label class="fl">User Type</label>
+          <select class="fs" id="d-type">
+            <option>Residential</option><option>Agricultural</option><option>Industrial</option><option>Commercial</option>
+          </select>
+        </div>
+        <button class="btn btn-p btn-f" onclick="runDemandForecast()">📈 Forecast Demand</button>
+        <div id="demand-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">💡 Demand Insights</div></div>
+      <div class="card-body">
+        <div class="alert info"><span class="alert-icon">ℹ️</span><span>Bengaluru average: <b>750L/person/day</b> residential. Industrial zones consume 3× more.</span></div>
+        <div class="cbar-wrap" style="margin-top:14px">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">Seasonal Demand Pattern</div>
+          <div class="cbar-row"><div class="cbar-label">Mar–May</div><div class="cbar-track"><div class="cbar-fill" style="width:92%;background:linear-gradient(90deg,var(--red),#F87171)">Peak +35%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Jun–Sep</div><div class="cbar-track"><div class="cbar-fill" style="width:58%;background:linear-gradient(90deg,var(--water),var(--teal))">Monsoon</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Oct–Feb</div><div class="cbar-track"><div class="cbar-fill" style="width:72%;background:linear-gradient(90deg,var(--green),#22C55E)">Normal</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: LEAK ════════════════ -->
+<section class="page" id="page-leak">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🚨 Pipeline Sensor Inputs</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Zone</label>
+          <select class="fs" id="leak-zone">
+            <option>Koramangala</option><option>Indiranagar</option><option>Whitefield</option><option>Hebbal</option><option>Jayanagar</option><option>HSR Layout</option><option>BTM Layout</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Pressure (bar)</label>
+          <div class="range-row"><input class="fr" id="leak-pres" type="range" min="0" max="6" step="0.1" value="1.8"><span class="range-val" id="leak-pv">1.8</span></div>
+        </div>
+        <div class="fg"><label class="fl">Flow Rate (L/s)</label>
+          <div class="range-row"><input class="fr" id="leak-flow" type="range" min="0" max="300" step="5" value="142"><span class="range-val" id="leak-fv">142</span></div>
+        </div>
+        <div class="fg"><label class="fl">Turbidity (NTU)</label>
+          <div class="range-row"><input class="fr" id="leak-turb" type="range" min="0" max="200" step="1" value="45"><span class="range-val" id="leak-tv">45</span></div>
+        </div>
+        <button class="btn btn-p btn-f" onclick="runLeakDetection()">🚨 Detect Leak</button>
+        <div id="leak-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🗺️ Active Leak Map</div></div>
+      <div class="card-body">
+        <div class="alert danger"><span class="alert-icon">🚨</span><b>4 confirmed leaks</b> across Bengaluru zones. Critical zones highlighted.</div>
+        <table class="ztable" style="margin-top:12px">
+          <thead><tr><th>Zone</th><th>Severity</th><th>Pressure</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Koramangala</td><td><span class="risk-badge HIGH">🔴 CRITICAL</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">1.8 bar</td><td><span style="font-size:11px;color:var(--red)">Team dispatched</span></td></tr>
+            <tr><td>Whitefield</td><td><span class="risk-badge HIGH">🟠 HIGH</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">2.2 bar</td><td><span style="font-size:11px;color:var(--amber)">Investigating</span></td></tr>
+            <tr><td>BTM Layout</td><td><span class="risk-badge HIGH">🟠 HIGH</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">1.9 bar</td><td><span style="font-size:11px;color:var(--amber)">En route</span></td></tr>
+            <tr><td>HSR Layout</td><td><span class="risk-badge MEDIUM">🟡 MEDIUM</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">2.8 bar</td><td><span style="font-size:11px;color:var(--green)">Monitoring</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: FLOOD ═══════════════ -->
+<section class="page" id="page-flood">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🌊 Flood Risk Parameters</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Monsoon Intensity (1–10)</label>
+          <div class="range-row"><input class="fr" id="fl-mon" type="range" min="1" max="10" step="1" value="6"><span class="range-val" id="fl-mv">6</span></div>
+        </div>
+        <div class="fg"><label class="fl">Drainage Quality (1–10)</label>
+          <div class="range-row"><input class="fr" id="fl-drn" type="range" min="1" max="10" step="1" value="5"><span class="range-val" id="fl-dv">5</span></div>
+        </div>
+        <div class="fg"><label class="fl">River Management (1–10)</label>
+          <div class="range-row"><input class="fr" id="fl-riv" type="range" min="1" max="10" step="1" value="4"><span class="range-val" id="fl-rv">4</span></div>
+        </div>
+        <div class="fg"><label class="fl">Deforestation Level (1–10)</label>
+          <div class="range-row"><input class="fr" id="fl-def" type="range" min="1" max="10" step="1" value="5"><span class="range-val" id="fl-dfv">5</span></div>
+        </div>
+        <button class="btn btn-p btn-f" onclick="runFloodPrediction()">🌊 Predict Flood Risk</button>
+        <div id="flood-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 Historical Flood Data — Bengaluru</div></div>
+      <div class="card-body">
+        <div class="alert warning"><span class="alert-icon">⚠️</span>Bengaluru's low-lying areas (Koramangala, BTM, Ejipura) have experienced major flooding in <b>2017, 2022</b>.</div>
+        <div class="cbar-wrap" style="margin-top:14px">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">High-Risk Zones</div>
+          <div class="cbar-row"><div class="cbar-label">Koramangala</div><div class="cbar-track"><div class="cbar-fill" style="width:88%;background:linear-gradient(90deg,var(--red),#F87171)">88%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">BTM Layout</div><div class="cbar-track"><div class="cbar-fill" style="width:82%;background:linear-gradient(90deg,var(--red),#F87171)">82%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Whitefield</div><div class="cbar-track"><div class="cbar-fill" style="width:65%;background:linear-gradient(90deg,var(--amber),#F59E0B)">65%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Indiranagar</div><div class="cbar-track"><div class="cbar-fill" style="width:48%;background:linear-gradient(90deg,var(--amber),#F59E0B)">48%</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Hebbal</div><div class="cbar-track"><div class="cbar-fill" style="width:28%;background:linear-gradient(90deg,var(--green),#22C55E)">28%</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: QUALITY ═════════════ -->
+<section class="page" id="page-quality">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🧪 Water Quality Parameters</div></div>
+      <div class="card-body">
+        <div class="fgrid">
+          <div class="fg"><label class="fl">pH Level</label><input class="fi" id="q-ph" type="number" step="0.1" value="7.2" min="0" max="14"></div>
+          <div class="fg"><label class="fl">TDS / Solids (mg/L)</label><input class="fi" id="q-tds" type="number" value="310" min="0" max="2000"></div>
+          <div class="fg"><label class="fl">Turbidity (NTU)</label><input class="fi" id="q-turb" type="number" step="0.1" value="3.8" min="0" max="100"></div>
+          <div class="fg"><label class="fl">Hardness (mg/L)</label><input class="fi" id="q-hard" type="number" value="180" min="0" max="500"></div>
+        </div>
+        <button class="btn btn-p btn-f" onclick="runQualityCheck()">🧪 Analyse Water Quality</button>
+        <div id="quality-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 BWSSB Quality Standards</div></div>
+      <div class="card-body">
+        <table class="ztable">
+          <thead><tr><th>Parameter</th><th>WHO Limit</th><th>BWSSB Today</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>pH</td><td style="font-family:'DM Mono',monospace;font-size:12px">6.5–8.5</td><td style="font-family:'DM Mono',monospace;font-size:12px">7.2</td><td><span class="risk-badge LOW">✅ Safe</span></td></tr>
+            <tr><td>TDS</td><td style="font-family:'DM Mono',monospace;font-size:12px">≤500 mg/L</td><td style="font-family:'DM Mono',monospace;font-size:12px">310</td><td><span class="risk-badge LOW">✅ Safe</span></td></tr>
+            <tr><td>Turbidity</td><td style="font-family:'DM Mono',monospace;font-size:12px">≤5 NTU</td><td style="font-family:'DM Mono',monospace;font-size:12px">3.8</td><td><span class="risk-badge LOW">✅ Safe</span></td></tr>
+            <tr><td>Chlorine</td><td style="font-family:'DM Mono',monospace;font-size:12px">0.2–1 mg/L</td><td style="font-family:'DM Mono',monospace;font-size:12px">0.5</td><td><span class="risk-badge LOW">✅ Safe</span></td></tr>
+            <tr><td>Hardness</td><td style="font-family:'DM Mono',monospace;font-size:12px">≤300 mg/L</td><td style="font-family:'DM Mono',monospace;font-size:12px">180</td><td><span class="risk-badge LOW">✅ Safe</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: FARMER ══════════════ -->
+<section class="page" id="page-farmer">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🌾 Farm Inputs</div></div>
+      <div class="card-body">
+        <div class="fgrid">
+          <div class="fg"><label class="fl">Zone</label>
+            <select class="fs" id="farm-zone"><option>Koramangala</option><option>Indiranagar</option><option>Whitefield</option><option>Hebbal</option><option>Jayanagar</option><option>Kanakapura Road</option><option>Devanahalli</option></select>
+          </div>
+          <div class="fg"><label class="fl">Crop</label>
+            <select class="fs" id="farm-crop"><option>Rice</option><option>Wheat</option><option>Maize</option><option>Sugarcane</option><option>Coffee</option><option>Tomato</option><option>Cotton</option><option>Mustard</option></select>
+          </div>
+          <div class="fg"><label class="fl">Soil Nitrogen (N)</label><input class="fi" id="farm-n" type="number" value="90" min="0" max="200"></div>
+          <div class="fg"><label class="fl">Soil pH</label><input class="fi" id="farm-ph" type="number" step="0.1" value="6.5" min="4" max="9"></div>
+        </div>
+        <div class="fg"><label class="fl">Soil Moisture (%)</label>
+          <div class="range-row"><input class="fr" id="farm-moisture" type="range" min="0" max="100" value="45"><span class="range-val" id="farm-mv">45</span></div>
+        </div>
+        <div class="fgrid">
+          <div class="fg"><label class="fl">Rainfall last 1h (mm)</label><input class="fi" id="farm-rain1" type="number" step="0.1" value="0.5" min="0"></div>
+          <div class="fg"><label class="fl">Rainfall last 6h (mm)</label><input class="fi" id="farm-rain6" type="number" step="0.1" value="3" min="0"></div>
+        </div>
+        <div class="fg"><label class="fl">Temperature (°C)</label><input class="fi" id="farm-temp" type="number" value="28"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-p btn-f" onclick="runFarmerAgent()">🌾 Get Irrigation Plan</button>
+          <button class="btn btn-s btn-f" onclick="runCropRecommendation()">🌱 Crop Rec.</button>
+        </div>
+        <div id="farmer-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🌱 Crop Recommendation</div></div>
+      <div class="card-body">
+        <div id="crop-result">
+          <div style="color:var(--text3);font-size:12.5px;padding:16px 0;text-align:center">Enter soil parameters and click "Crop Rec." for AI analysis</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: ALL AGENTS ══════════ -->
+<section class="page" id="page-agents">
+  <div class="alert info mb16"><span class="alert-icon">🤖</span>All 4 AI agents run sequentially. Cohere AI powers narrative outputs when API key is configured. Ensemble ML models always active.</div>
+  <button class="btn btn-p" onclick="runAllAgents()" style="margin-bottom:18px">🚀 Run All Agents Now</button>
+  <button class="btn btn-s" onclick="clearAgentResults()" style="margin-bottom:18px;margin-left:8px">🗑 Clear</button>
+  <div id="all-agents-result">
+    <div class="g2">
+      <div class="agent-card" id="agent-prediction">
+        <div class="agent-hd"><div class="agent-icon blue">🌤️</div><div class="agent-name">Prediction Agent</div><div class="agent-status ok">READY</div></div>
+        <div class="agent-body"><div style="color:var(--text3);font-size:12px">Analyses weather + historical data to predict flood risk and demand.</div></div>
+      </div>
+      <div class="agent-card" id="agent-leak">
+        <div class="agent-hd"><div class="agent-icon red">🚨</div><div class="agent-name">Leak Detection Agent</div><div class="agent-status warn">4 ACTIVE</div></div>
+        <div class="agent-body"><div style="color:var(--text3);font-size:12px">Isolation Forest + Z-Score + IQR ensemble detects pipeline anomalies.</div></div>
+      </div>
+      <div class="agent-card" id="agent-decision">
+        <div class="agent-hd"><div class="agent-icon amber">⚡</div><div class="agent-name">Decision Agent</div><div class="agent-status ok">READY</div></div>
+        <div class="agent-body"><div style="color:var(--text3);font-size:12px">Synthesises all agent outputs into actionable recommendations.</div></div>
+      </div>
+      <div class="agent-card" id="agent-redistrib">
+        <div class="agent-hd"><div class="agent-icon green">⚖️</div><div class="agent-name">Redistribution Agent</div><div class="agent-status ok">READY</div></div>
+        <div class="agent-body"><div style="color:var(--text3);font-size:12px">Population-proportional water equity balancing across all zones.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: SERVICES ════════════ -->
+<section class="page" id="page-services">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🚛 Book BWSSB Service</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Service Type</label>
+          <select class="fs" id="svc-type">
+            <option>Water Tanker</option><option>Pipe Repair</option><option>Meter Installation</option><option>New Connection</option><option>Sewage Service</option><option>Water Quality Test</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Zone / Area</label>
+          <select class="fs" id="svc-zone">
+            <option>Koramangala</option><option>Indiranagar</option><option>Whitefield</option><option>Hebbal</option><option>Jayanagar</option><option>HSR Layout</option><option>Marathahalli</option><option>BTM Layout</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Address</label><input class="fi" id="svc-addr" placeholder="Building/Street/Landmark"></div>
+        <div class="fg"><label class="fl">Contact Number</label><input class="fi" id="svc-contact" placeholder="10-digit mobile number"></div>
+        <div class="fg"><label class="fl">Priority</label>
+          <select class="fs" id="svc-priority"><option>Normal</option><option>Urgent</option><option>Emergency</option></select>
+        </div>
+        <button class="btn btn-p btn-f" onclick="bookService()">✅ Book Service</button>
+        <div id="svc-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🔍 Track Ticket Status</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Ticket ID</label><input class="fi" id="status-id" placeholder="e.g. BK-2041 or AQ-2045"></div>
+        <button class="btn btn-s btn-f" onclick="trackStatus()">🔍 Track Status</button>
+        <div id="status-result"></div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">BWSSB Emergency Contacts</div>
+          <div class="mrow"><span class="mkey">📞 Helpline</span><span class="mval bl">1916</span></div>
+          <div class="mrow"><span class="mkey">📞 Control Room</span><span class="mval">080-22238888</span></div>
+          <div class="mrow"><span class="mkey">🌐 Portal</span><span class="mval" style="font-size:11px">bwssb.co.in</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: COMPLAINTS ══════════ -->
+<section class="page" id="page-complaints">
+  <div class="g2">
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📋 File a Complaint</div></div>
+      <div class="card-body">
+        <div class="fg"><label class="fl">Complaint Type</label>
+          <select class="fs" id="cmp-type">
+            <option>No Water Supply</option><option>Low Pressure</option><option>Dirty Water</option><option>Pipeline Leak</option><option>Billing Issue</option><option>Meter Problem</option><option>Sewage Overflow</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Zone / Area</label>
+          <select class="fs" id="cmp-zone">
+            <option>Koramangala</option><option>Indiranagar</option><option>Whitefield</option><option>Hebbal</option><option>Jayanagar</option><option>HSR Layout</option><option>Marathahalli</option><option>BTM Layout</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Description</label><textarea class="fi" id="cmp-desc" style="height:80px;padding:10px;resize:vertical" placeholder="Describe the issue in detail…"></textarea></div>
+        <div class="fg"><label class="fl">Contact Number</label><input class="fi" id="cmp-contact" placeholder="Mobile number for updates"></div>
+        <button class="btn btn-p btn-f" onclick="submitComplaint()">📋 Submit Complaint</button>
+        <div id="cmp-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 Complaint Statistics</div></div>
+      <div class="card-body">
+        <div class="cbar-wrap" style="margin-bottom:16px">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">By Type</div>
+          <div class="cbar-row"><div class="cbar-label">No Supply</div><div class="cbar-track"><div class="cbar-fill" style="width:72%;background:linear-gradient(90deg,var(--red),#F87171)">36</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Low Pressure</div><div class="cbar-track"><div class="cbar-fill" style="width:56%;background:linear-gradient(90deg,var(--amber),#F59E0B)">28</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Pipe Leak</div><div class="cbar-track"><div class="cbar-fill" style="width:46%;background:linear-gradient(90deg,var(--water),var(--teal))">23</div></div></div>
+          <div class="cbar-row"><div class="cbar-label">Dirty Water</div><div class="cbar-track"><div class="cbar-fill" style="width:26%;background:linear-gradient(90deg,var(--purple),#A855F7)">13</div></div></div>
+        </div>
+        <div class="mrow"><span class="mkey">Total Open</span><span class="mval rd">14</span></div>
+        <div class="mrow"><span class="mkey">Resolved This Week</span><span class="mval gn">42</span></div>
+        <div class="mrow"><span class="mkey">Avg Resolution</span><span class="mval">3.2 days</span></div>
+        <div class="mrow"><span class="mkey">Satisfaction Rate</span><span class="mval gn">78%</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: SCHEDULE ════════════ -->
+<section class="page" id="page-schedule">
+  <div class="card mb16">
+    <div class="card-hd">
+      <div class="card-title">🕐 BWSSB Water Supply Schedule — Bengaluru</div>
+      <span class="card-badge" style="background:rgba(22,163,74,.1);color:var(--green)">UPDATED TODAY</span>
+    </div>
+    <div class="card-body">
+      <div class="alert info" style="margin-bottom:12px"><span class="alert-icon">ℹ️</span>Times in IST. Subject to BWSSB operational conditions. Emergency: <b>1916</b></div>
+      <div class="sched-grid" id="sched-grid">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🚛 Tanker Availability</div></div>
+    <div class="card-body">
+      <table class="ztable">
+        <thead><tr><th>Zone</th><th>Tankers Ready</th><th>Next Supply</th><th>Emergency Contact</th></tr></thead>
+        <tbody id="tanker-table"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ PAGE: CHAT ════════════════ -->
+<section class="page" id="page-chat">
+  <div class="g31">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">💬 AquaSphere AI Assistant</div>
+        <select class="lang-sel" id="chat-lang" title="Language">
+          <option value="en">🇬🇧 EN</option>
+          <option value="kn">🇮🇳 KN</option>
+          <option value="hi">🇮🇳 HI</option>
+          <option value="ta">🌐 TA</option>
+          <option value="te">🌐 TE</option>
+        </select>
+      </div>
+      <div class="card-body">
+        <div class="chat-wrap">
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-msg bot">💧 <b>AquaSphere</b> — BWSSB's AI assistant.<br>Ask me about water quality, leaks, flood risk, tanker booking, irrigation, billing, or supply schedules. I support English, ಕನ್ನಡ, हिंदी, தமிழ் and తెలుగు.</div>
+          </div>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chat-input" placeholder="Type your question…" onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn btn-p" onclick="sendChat()">Send ➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-hd"><div class="card-title">🔥 Quick Questions</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('What leaks are active right now?')">🔴 What leaks are active?</button>
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('What is the flood risk today?')">🌊 Today\'s flood risk?</button>
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('How do I book a water tanker?')">🚛 Book a tanker?</button>
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('Is my water safe to drink?')">🧪 Is water safe to drink?</button>
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('What crops should I grow this season?')">🌾 Best crops this season?</button>
+            <button class="btn btn-s btn-f" style="font-size:12px;justify-content:flex-start" onclick="askQuick('BWSSB supply schedule for Koramangala')">🕐 Supply schedule?</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🌐 Language Support</div></div>
+        <div class="card-body">
+          <div class="mrow"><span class="mkey">🇬🇧 English</span><span class="mval gn">✅ Full</span></div>
+          <div class="mrow"><span class="mkey">🇮🇳 Kannada (ಕನ್ನಡ)</span><span class="mval gn">✅ Full</span></div>
+          <div class="mrow"><span class="mkey">🇮🇳 Hindi (हिंदी)</span><span class="mval gn">✅ Full</span></div>
+          <div class="mrow"><span class="mkey">🌐 Tamil / Telugu</span><span class="mval am">⚡ Cohere AI</span></div>
+          <div class="ai-narrative">Powered by Cohere Command R+ with BWSSB-specific training. Multilingual fallback active.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ═══════ CHART.JS (lightweight inline) ═══════ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════
+const BACKEND_PORT = 5006;
+const BACKEND_HOST =
+  window.location.hostname && window.location.hostname !== '127.0.0.1'
+    ? window.location.hostname
+    : 'localhost';
+const API =
+  window.location.protocol.startsWith('http') && window.location.port === String(BACKEND_PORT)
+    ? '/api'
+    : `http://${BACKEND_HOST}:${BACKEND_PORT}/api`;
+let map, heatLayer, markerGroup, zoneCircles = [];
+let currentMapLayer = 'heatmap';
+
+// ── Navigation ──────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard / Overview', map:'Live Map / Bengaluru',
+    anomaly:'Anomaly Detection / AI Ensemble', demand:'Demand Forecast / ML Model',
+    leak:'Leak Detection / Pipeline AI', flood:'Flood Risk / Prediction Model',
+    quality:'Water Quality / Potability', farmer:'Farmer Insights / Irrigation AI',
+    agents:'All AI Agents / Unified Run', services:'Book Services / BWSSB',
+    complaints:'Complaints / File & Track', schedule:'Supply Schedule / BWSSB',
+    chat:'AquaSphere / AI Chat',
+  };
+  const [title, sub] = (titles[id]||'').split('/');
+  document.getElementById('topbar-title').innerHTML = `${title} <span>/${sub||''}</span>`;
+
+  if (id === 'map' && !map) initMap();
+  if (id === 'schedule') renderSchedule();
+  if (id === 'dashboard') loadDashboardZones();
+}
+
+// ════════════════════════════════════════════════════════════
+// API CALL — with graceful fallback
+// ════════════════════════════════════════════════════════════
+async function apiCall(path, method='GET', body=null) {
+  try {
+    const opts = { method, headers:{'Content-Type':'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch(e) {
+    console.warn('API fallback for', path, e.message);
+    return null;
+  }
+}
+
+function loading(el) {
+  const e = document.getElementById(el);
+  if(e) e.innerHTML = '<div class="loading"><div class="spinner"></div>AI Agent processing…</div>';
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+// ════════════════════════════════════════════════════════════
+// WEATHER
+// ════════════════════════════════════════════════════════════
+async function refreshWeather() {
+  const data = await apiCall('/weather/Bengaluru');
+  const d = data || { temp:28, description:'Partly cloudy', rain_1h:2.4, humidity:78 };
+  document.getElementById('wp-temp').textContent = Math.round(d.temp||28) + '°C';
+  document.getElementById('wp-desc').textContent = (d.description||'Bengaluru').substring(0,18);
+}
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════
+const ZONES_MOCK = [
+  {zone_id:'Z1',name:'Koramangala',risk:'HIGH', usage_pct:87,pressure_bar:1.8,leak:true},
+  {zone_id:'Z2',name:'Indiranagar',risk:'MEDIUM',usage_pct:64,pressure_bar:3.1,leak:false},
+  {zone_id:'Z3',name:'Whitefield', risk:'HIGH', usage_pct:91,pressure_bar:2.2,leak:true},
+  {zone_id:'Z4',name:'Hebbal',     risk:'LOW',  usage_pct:45,pressure_bar:3.5,leak:false},
+  {zone_id:'Z5',name:'Jayanagar',  risk:'LOW',  usage_pct:58,pressure_bar:3.4,leak:false},
+  {zone_id:'Z6',name:'HSR Layout', risk:'MEDIUM',usage_pct:73,pressure_bar:2.8,leak:true},
+  {zone_id:'Z7',name:'BTM Layout', risk:'HIGH', usage_pct:88,pressure_bar:1.9,leak:true},
+  {zone_id:'Z8',name:'Marathahalli',risk:'MEDIUM',usage_pct:69,pressure_bar:2.9,leak:false},
+];
+
+async function loadDashboardZones() {
+  const data = await apiCall('/dashboard/zones');
+  const zones = data || ZONES_MOCK;
+  const tbody = document.getElementById('dash-zone-table');
+  if (!tbody) return;
+  tbody.innerHTML = zones.slice(0,8).map(z => {
+    const uf = z.usage_pct>80?'uf-high':z.usage_pct>60?'uf-med':'uf-low';
+    return `<tr>
+      <td><b>${z.name}</b></td>
+      <td><span class="risk-badge ${z.risk}">${z.risk}</span></td>
+      <td><div class="use-bar"><div class="use-fill ${uf}" style="width:${z.usage_pct}%"></div></div><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-left:6px">${z.usage_pct}%</span></td>
+      <td>${z.leak?'<span style="color:var(--red);font-size:11px">⚠️ Leak</span>':'<span style="color:var(--green);font-size:11px">✅ OK</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Dashboard Chart
+function renderDashChart() {
+  const ctx = document.getElementById('dashChart');
+  if (!ctx) return;
+  if (window._dashChart) window._dashChart.destroy();
+  window._dashChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets:[
+        {label:'Supply (MLD)',data:[11.8,12.1,12.4,11.9,12.6,13.1,12.4],borderColor:'#1A6EFF',backgroundColor:'rgba(26,110,255,0.08)',fill:true,tension:0.4,pointRadius:3},
+        {label:'Demand (MLD)',data:[10.9,11.4,12.0,11.5,12.8,14.2,13.1],borderColor:'#DC2626',backgroundColor:'rgba(220,38,38,0.06)',fill:true,tension:0.4,pointRadius:3,borderDash:[4,2]},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Syne',size:11},boxWidth:12}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:'DM Mono',size:10}}},
+        y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{family:'DM Mono',size:10}}}
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// MAP — Leaflet + Heatmap
+// ════════════════════════════════════════════════════════════
+const INCIDENTS_MOCK = [
+  {id:'INC001',type:'LEAK',severity:'CRITICAL',lat:12.9279,lng:77.6271,zone:'Koramangala',title:'Main pipeline burst',description:'18-inch pipe rupture at 5th Block junction',status:'ACTIVE',reported:'2h ago',ticket:'AQ-2041'},
+  {id:'INC002',type:'LEAK',severity:'HIGH',lat:12.9698,lng:77.7500,zone:'Whitefield',title:'Feeder line leak',description:'Steady leak near Phoenix Marketcity, ~50L/min',status:'ACTIVE',reported:'4h ago',ticket:'AQ-2038'},
+  {id:'INC003',type:'LEAK',severity:'HIGH',lat:12.9165,lng:77.6101,zone:'BTM Layout',title:'Underground pipe leak',description:'Pressure drop at Bannerghatta Road junction',status:'ACTIVE',reported:'1h ago',ticket:'AQ-2045'},
+  {id:'INC004',type:'LEAK',severity:'MEDIUM',lat:12.9116,lng:77.6389,zone:'HSR Layout',title:'Service connection leak',description:'Customer connection at 27th Sector',status:'IN_PROGRESS',reported:'6h ago',ticket:'AQ-2031'},
+  {id:'INC005',type:'FLOOD_RISK',severity:'HIGH',lat:12.9279,lng:77.6271,zone:'Koramangala',title:'Flood risk — low-lying area',description:'Storm drain overflow risk on 80 Feet Road',status:'MONITORING',reported:'Today'},
+  {id:'INC006',type:'FLOOD_RISK',severity:'MEDIUM',lat:12.9784,lng:77.6408,zone:'Indiranagar',title:'Drainage blockage',description:'Blocked storm drain near 100 Feet Road underpass',status:'MONITORING',reported:'Yesterday'},
+  {id:'INC007',type:'QUALITY',severity:'MEDIUM',lat:12.9591,lng:77.6972,zone:'Marathahalli',title:'Turbidity spike',description:'NTU 7.2 — above 5 NTU threshold near old pipeline',status:'TESTING',reported:'3h ago',ticket:'AQ-2042'},
+  {id:'INC008',type:'QUALITY',severity:'LOW',lat:13.0450,lng:77.5940,zone:'Hebbal',title:'Chlorine residual low',description:'0.1 mg/L — below 0.2 mg/L minimum',status:'RESOLVED',reported:'Yesterday'},
+  {id:'INC009',type:'SUPPLY',severity:'HIGH',lat:12.8399,lng:77.6770,zone:'Electronic City',title:'Planned maintenance shutdown',description:'Zone shutdown 10AM–4PM for valve replacement TP-17',status:'SCHEDULED',reported:'Today 8AM'},
+  {id:'INC010',type:'SUPPLY',severity:'MEDIUM',lat:13.1004,lng:77.5963,zone:'Yelahanka',title:'Reduced supply pressure',description:'60% flow capacity — booster pump maintenance',status:'IN_PROGRESS',reported:'5h ago'},
+];
+
+const HEATMAP_MOCK = (() => {
+  const zones = [{lat:12.9279,lng:77.6271,int:0.95},{lat:12.9698,lng:77.7500,int:0.88},
+    {lat:12.9165,lng:77.6101,int:0.90},{lat:12.9116,lng:77.6389,int:0.72},
+    {lat:12.9784,lng:77.6408,int:0.62},{lat:12.9591,lng:77.6972,int:0.66},
+    {lat:13.0450,lng:77.5940,int:0.40},{lat:12.9250,lng:77.5938,int:0.52},
+    {lat:12.8399,lng:77.6770,int:0.75},{lat:12.9898,lng:77.5530,int:0.48},
+    {lat:13.1004,lng:77.5963,int:0.38},{lat:12.9259,lng:77.5487,int:0.45}];
+  const pts = [];
+  zones.forEach(z => {
+    for(let i=0;i<6;i++) pts.push([z.lat+(Math.random()-.5)*.03,z.lng+(Math.random()-.5)*.03,z.int*(0.6+Math.random()*.4)]);
+  });
+  return pts;
+})();
+
+function initMap() {
+  map = L.map('water-map', { center:[12.9716, 77.5946], zoom:11, zoomControl:true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap | Aquix BWSSB', maxZoom:18
+  }).addTo(map);
+  markerGroup = L.layerGroup().addTo(map);
+  loadMapData();
+}
+
+async function loadMapData() {
+  // Try API, fall back to mock
+  const hdata = await apiCall('/map/heatmap');
+  const idata = await apiCall('/map/incidents');
+  const hpoints = hdata?.heatmap_points || HEATMAP_MOCK;
+  const incidents = idata?.incidents || INCIDENTS_MOCK;
+
+  // Build heatmap
+  if (window.L && L.heatLayer) {
+    heatLayer = L.heatLayer(hpoints, {
+      radius:30, blur:22, maxZoom:13,
+      gradient:{0.0:'#3B82F6',0.3:'#0EA5E9',0.5:'#EAB308',0.7:'#F97316',1.0:'#DC2626'}
+    });
+  }
+  applyMapLayer(currentMapLayer, incidents);
+  renderIncidentList(incidents);
+}
+
+function applyMapLayer(layer, incidents) {
+  if (!map) return;
+  // Clear existing
+  markerGroup.clearLayers();
+  if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+  zoneCircles.forEach(c => map.removeLayer(c));
+  zoneCircles = [];
+
+  if (layer === 'heatmap' || layer === 'all') {
+    if (heatLayer) heatLayer.addTo(map);
+  }
+
+  if (layer === 'incidents' || layer === 'all') {
+    const inc = incidents || INCIDENTS_MOCK;
+    inc.forEach(i => {
+      const clr = {LEAK:'#DC2626',FLOOD_RISK:'#0EA5E9',QUALITY:'#7C3AED',SUPPLY:'#D97706'}[i.type]||'#666';
+      const icon = {LEAK:'🚨',FLOOD_RISK:'🌊',QUALITY:'🧪',SUPPLY:'⚡'}[i.type]||'📍';
+      const marker = L.circleMarker([i.lat, i.lng], {
+        radius:i.severity==='CRITICAL'?14:i.severity==='HIGH'?10:7,
+        fillColor:clr, color:'#fff', weight:2, opacity:1, fillOpacity:0.82
+      }).bindPopup(`
+        <div style="font-family:Syne,sans-serif;min-width:220px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">${icon} ${i.title}</div>
+          <div style="font-size:11px;color:#555;margin-bottom:6px">${i.zone} · ${i.reported}</div>
+          <div style="font-size:12px;line-height:1.5;margin-bottom:6px">${i.description}</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="background:${clr}22;color:${clr};font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid ${clr}44">${i.status}</span>
+            ${i.ticket?`<span style="font-family:'DM Mono',monospace;font-size:10px;color:#888">${i.ticket}</span>`:''}
+          </div>
+        </div>
+      `);
+      markerGroup.addLayer(marker);
+    });
+  }
+
+  if (layer === 'zones' || layer === 'all') {
+    const zones = [
+      {n:'Koramangala',lat:12.9279,lng:77.6271,risk:'HIGH',r:2200},
+      {n:'Whitefield',lat:12.9698,lng:77.7500,risk:'HIGH',r:2800},
+      {n:'BTM Layout',lat:12.9165,lng:77.6101,risk:'HIGH',r:1900},
+      {n:'Indiranagar',lat:12.9784,lng:77.6408,risk:'MEDIUM',r:1800},
+      {n:'HSR Layout',lat:12.9116,lng:77.6389,risk:'MEDIUM',r:2000},
+      {n:'Marathahalli',lat:12.9591,lng:77.6972,risk:'MEDIUM',r:2200},
+      {n:'Hebbal',lat:13.0450,lng:77.5940,risk:'LOW',r:2100},
+      {n:'Jayanagar',lat:12.9250,lng:77.5938,risk:'LOW',r:1700},
+    ];
+    const clrMap = {HIGH:'#DC2626',MEDIUM:'#D97706',LOW:'#16A34A'};
+    zones.forEach(z => {
+      const c = L.circle([z.lat,z.lng],{radius:z.r,color:clrMap[z.risk],fillColor:clrMap[z.risk],fillOpacity:0.08,weight:1.5}).addTo(map)
+        .bindTooltip(`${z.n} · Risk: ${z.risk}`,{direction:'top',className:'leaflet-tooltip'});
+      zoneCircles.push(c);
+    });
+  }
+}
+
+function setMapLayer(layer, btn) {
+  document.querySelectorAll('.map-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMapLayer = layer;
+  applyMapLayer(layer, INCIDENTS_MOCK);
+}
+
+function refreshMapData() { loadMapData(); }
+
+function renderIncidentList(incidents) {
+  const el = document.getElementById('incident-list');
+  if (!el) return;
+  const iconMap = {LEAK:'🚨',FLOOD_RISK:'🌊',QUALITY:'🧪',SUPPLY:'⚡'};
+  const clsMap  = {LEAK:'leak',FLOOD_RISK:'flood',QUALITY:'quality',SUPPLY:'supply'};
+  el.innerHTML = incidents.map(i => `
+    <div class="incident-item" onclick="map&&map.setView([${i.lat},${i.lng}],14)">
+      <div class="inc-icon ${clsMap[i.type]||'supply'}">${iconMap[i.type]||'📍'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="inc-title">${esc(i.title)}</div>
+        <div class="inc-zone">${esc(i.zone)} · ${esc(i.reported)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(i.description.substring(0,60))}…</div>
+      </div>
+      <div class="inc-status ${i.status}">${i.status.replace('_',' ')}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+// ANOMALY DETECTION
+// ════════════════════════════════════════════════════════════
+function initZoneInputs() {
+  const el = document.getElementById('zone-inputs');
+  if (!el) return;
+  const zones = ZONES_MOCK.slice(0,4);
+  el.innerHTML = zones.map(z => `
+    <div style="background:var(--surf3);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px">
+        <span class="risk-badge ${z.risk}">${z.name}</span>
+        ${z.leak?'<span style="color:var(--red);font-size:11px">⚠️ Leak suspected</span>':''}
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label class="fl">Flow (L/s)</label><input class="fi" id="az-flow-${z.zone_id}" type="number" value="${z.zone_id==='Z1'?142:z.zone_id==='Z3'?156:z.zone_id==='Z7'?138:88}"></div>
+        <div class="fg"><label class="fl">Pressure (bar)</label><input class="fi" id="az-pres-${z.zone_id}" type="number" step="0.1" value="${z.pressure_bar}"></div>
+        <div class="fg"><label class="fl">Consumption (L)</label><input class="fi" id="az-cons-${z.zone_id}" type="number" value="${z.zone_id==='Z1'?8500:z.zone_id==='Z3'?9100:z.zone_id==='Z7'?8200:6200}"></div>
+        <div class="fg"><label class="fl">Population</label><input class="fi" id="az-pop-${z.zone_id}" type="number" value="${z.zone_id==='Z1'?8500:z.zone_id==='Z3'?9100:z.zone_id==='Z7'?8200:6200}"></div>
+      </div>
+    </div>`).join('');
+}
+
+async function runAnomalyDetection() {
+  const zones = ZONES_MOCK.slice(0,4).map(z => ({
+    zone_id: z.zone_id, name: z.name,
+    flow_lps:      parseFloat(document.getElementById(`az-flow-${z.zone_id}`)?.value||0),
+    pressure_bar:  parseFloat(document.getElementById(`az-pres-${z.zone_id}`)?.value||3),
+    consumption_l: parseFloat(document.getElementById(`az-cons-${z.zone_id}`)?.value||0),
+    population:    parseFloat(document.getElementById(`az-pop-${z.zone_id}`)?.value||1),
+  }));
+
+  document.getElementById('anomaly-result').innerHTML = '<div class="loading"><div class="spinner"></div>Running ensemble detection…</div>';
+  document.getElementById('redistrib-result').innerHTML = '';
+
+  const data = await apiCall('/anomaly/detect','POST',{zones});
+  const result = data || mockAnomalyDetect(zones);
+  renderAnomalyResults(result);
+}
+
+function mockAnomalyDetect(zones) {
+  const anomalies = zones.map(z => {
+    const isLeak = z.pressure_bar < 2.2 && z.flow_lps > 100;
+    const isOverconsump = z.consumption_l / Math.max(z.population,1) > 1.4;
+    const is_anomaly = isLeak || isOverconsump;
+    return {
+      zone_id: z.zone_id, name: z.name, is_anomaly,
+      anomaly_type: is_anomaly ? (isLeak?'LEAK':'OVERCONSUMPTION') : 'NORMAL',
+      severity: isLeak?'CRITICAL':isOverconsump?'HIGH':'LOW',
+      vote_score: is_anomaly ? 3 : 0,
+      justification: isLeak ? `Pressure ${z.pressure_bar} bar below 2.5 threshold while flow ${z.flow_lps} L/s elevated.` :
+                    isOverconsump ? `Per-capita ${(z.consumption_l/z.population).toFixed(1)} L/person abnormally high.` :
+                    'All sensors within range.',
+      metrics:{ pressure_bar:z.pressure_bar, flow_lps:z.flow_lps, consumption_l:z.consumption_l }
+    };
+  });
+  const transfers = anomalies.filter(a=>a.is_anomaly).map((a,i)=>({from_zone:'Z'+((i+2)%4+1),to_zone:a.zone_id,volume_l:45000,priority:a.severity,reason:a.anomaly_type+' detected'}));
+  return {
+    anomalies, summary:{ anomalous_zones:anomalies.filter(a=>a.is_anomaly).length, total_zones:zones.length, alert_level: anomalies.some(a=>a.severity==='CRITICAL')?'CRITICAL':'WARNING' },
+    redistribution:{ transfers, equity_score:0.84, explanation:`${transfers.length} transfer(s) planned. Equity: 84%.` },
+    agent_decision:{ alert_level: anomalies.some(a=>a.severity==='CRITICAL')?'CRITICAL':'WARNING', recommendations:[], summary:'Decision agent: anomalies processed.' }
+  };
+}
+
+function renderAnomalyResults(result) {
+  const el = document.getElementById('anomaly-result');
+  const re = document.getElementById('redistrib-result');
+  const anomalies = result.anomalies || [];
+  const summary = result.summary || {};
+
+  const alertCls = summary.alert_level==='CRITICAL'?'danger':summary.alert_level==='WARNING'?'warning':'success';
+  el.innerHTML = `
+    <div class="alert ${alertCls}" style="margin-bottom:12px"><span class="alert-icon">${summary.alert_level==='CRITICAL'?'🚨':summary.alert_level==='WARNING'?'⚠️':'✅'}</span>
+      <b>${summary.alert_level}</b> — ${summary.anomalous_zones}/${summary.total_zones} zones anomalous
+    </div>
+    ${anomalies.map(a=>`
+      <div style="background:${a.is_anomaly?'rgba(220,38,38,0.04)':'rgba(22,163,74,0.04)'};border:1px solid ${a.is_anomaly?'rgba(220,38,38,.15)':'rgba(22,163,74,.15)'};border-radius:var(--rsm);padding:11px 13px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <b style="font-size:13px">${a.name}</b>
+          <span class="risk-badge ${a.severity==='CRITICAL'||a.severity==='HIGH'?'HIGH':a.severity==='MEDIUM'?'MEDIUM':'LOW'}">${a.anomaly_type}</span>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)">${a.vote_score}/5 detectors</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.5">${a.justification}</div>
+        <div style="display:flex;gap:12px;margin-top:6px;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text3)">
+          <span>P: ${a.metrics?.pressure_bar?.toFixed(1)} bar</span>
+          <span>F: ${a.metrics?.flow_lps?.toFixed(0)} L/s</span>
+        </div>
+      </div>`).join('')}`;
+
+  if (result.redistribution) {
+    const r = result.redistribution;
+    re.innerHTML = `
+      <div class="mrow"><span class="mkey">Equity Score</span><span class="mval gn">${(r.equity_score*100).toFixed(0)}%</span></div>
+      <div class="mrow"><span class="mkey">Transfers Planned</span><span class="mval bl">${r.transfers?.length||0}</span></div>
+      <p style="font-size:12px;color:var(--text3);margin:8px 0 10px;line-height:1.5">${r.explanation}</p>
+      ${(r.transfers||[]).map(t=>`
+        <div style="background:rgba(26,110,255,.04);border:1px solid rgba(26,110,255,.12);border-radius:var(--rsm);padding:10px 12px;margin-bottom:7px;font-size:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-family:'DM Mono',monospace;font-weight:600">${t.from_zone}</span>
+            <span style="color:var(--accent)">→</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:600">${t.to_zone}</span>
+            <span class="risk-badge ${t.priority==='CRITICAL'||t.priority==='HIGH'?'HIGH':'MEDIUM'}" style="margin-left:auto">${t.priority}</span>
+          </div>
+          <div style="color:var(--text3)">${(t.volume_l/1000).toFixed(0)}K L — ${t.reason}</div>
+        </div>`).join('')}
+      ${result.agent_decision?.summary ? `<div class="ai-narrative">${esc(result.agent_decision.summary)}</div>` : ''}
+      ${result.agent_decision?.ai_summary ? `<div class="ai-narrative" style="margin-top:8px">🤖 ${esc(result.agent_decision.ai_summary)}</div>` : ''}`;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// DEMAND FORECAST
+// ════════════════════════════════════════════════════════════
+async function runDemandForecast() {
+  loading('demand-result');
+  const body = {
+    temperature:        parseFloat(document.getElementById('d-temp').value),
+    humidity:           parseFloat(document.getElementById('d-hum').value),
+    population_density: parseFloat(document.getElementById('d-pop').value),
+    rainfall:           parseFloat(document.getElementById('d-rain').value),
+    user_type:          document.getElementById('d-type').value,
+  };
+  const data = await apiCall('/predict/demand','POST',body) || mockDemand(body);
+  const el = document.getElementById('demand-result');
+  const lvlCls = data.demand_level==='High'?'danger':data.demand_level==='Moderate'?'warning':'success';
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd ${data.demand_level==='High'?'danger':data.demand_level==='Moderate'?'warning':'success'}">
+        <div class="result-title">📊 Demand Prediction: ${data.demand_level}</div>
+      </div>
+      <div class="result-body">
+        <div class="mrow"><span class="mkey">Predicted Demand</span><span class="mval bl">${data.predicted_demand_l_day?.toLocaleString()} L/day</span></div>
+        <div class="mrow"><span class="mkey">Demand Level</span><span class="mval ${lvlCls}">${data.demand_level}</span></div>
+        <div class="mrow"><span class="mkey">Model Confidence</span><span class="mval gn">${((data.confidence||0.89)*100).toFixed(1)}%</span></div>
+        <div class="mrow"><span class="mkey">Model</span><span class="mval" style="font-size:11px">${data.model||'Ensemble ML'}</span></div>
+        ${data.ai_narrative?`<div class="ai-narrative">${esc(data.ai_narrative)}</div>`:''}
+      </div>
+    </div>`;
+}
+
+function mockDemand(b) {
+  const base = b.temperature*12+b.humidity*3.5+b.population_density*8-b.rainfall*0.5+200;
+  const mult = {Residential:1,Agricultural:2.5,Industrial:1.8,Commercial:1.4}[b.user_type]||1;
+  const pred = Math.round(base*mult);
+  return {predicted_demand_l_day:pred,demand_level:pred<600?'Low':pred<900?'Moderate':'High',confidence:.894,model:'Ensemble (LinearReg + RandomForest)'};
+}
+
+// ════════════════════════════════════════════════════════════
+// LEAK DETECTION
+// ════════════════════════════════════════════════════════════
+async function runLeakDetection() {
+  loading('leak-result');
+  const body = {
+    zone:         document.getElementById('leak-zone').value,
+    pressure_bar: parseFloat(document.getElementById('leak-pres').value),
+    flow_lps:     parseFloat(document.getElementById('leak-flow').value),
+    turbidity:    parseFloat(document.getElementById('leak-turb').value),
+  };
+  const data = await apiCall('/predict/leak','POST',body) || mockLeak(body);
+  const el = document.getElementById('leak-result');
+  const verdict = data.verdict || data.analysis?.verdict || 'NORMAL';
+  const cls = verdict==='LEAK_DETECTED'?'danger':verdict==='ANOMALY'?'warning':'success';
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd ${cls}">
+        <div class="result-title">${verdict==='LEAK_DETECTED'?'🚨 LEAK DETECTED':verdict==='ANOMALY'?'⚠️ ANOMALY':'✅ NORMAL'} — ${body.zone}</div>
+      </div>
+      <div class="result-body">
+        <div class="mrow"><span class="mkey">Verdict</span><span class="mval ${verdict==='LEAK_DETECTED'?'rd':verdict==='ANOMALY'?'am':'gn'}">${verdict}</span></div>
+        <div class="mrow"><span class="mkey">Anomaly Score</span><span class="mval">${data.anomaly_score||data.analysis?.anomaly_score||0}%</span></div>
+        <div class="mrow"><span class="mkey">Confidence</span><span class="mval">${((data.probability||data.analysis?.probability||0.9)*100).toFixed(1)}%</span></div>
+        <div class="mrow"><span class="mkey">Action</span><span class="mval" style="font-size:11.5px">${esc(data.recommended_action||data.analysis?.recommended_action||'')}</span></div>
+        <div class="alert ${cls}" style="margin-top:8px"><span class="alert-icon">${verdict==='LEAK_DETECTED'?'🚨':'💡'}</span><span style="font-size:12px">${esc(data.alert_message||data.justification||data.analysis?.justification||'')}</span></div>
+        ${data.ai_analysis?`<div class="ai-narrative">${esc(data.ai_analysis)}</div>`:''}
+      </div>
+    </div>`;
+}
+
+function mockLeak(b) {
+  const score = Math.max(0,Math.min(100,Math.round(100-b.pressure_bar*12+(b.flow_lps>150?40:0)+b.turbidity*.3)));
+  const verdict = b.pressure_bar<1.5&&b.flow_lps>100?'LEAK_DETECTED':score>60?'ANOMALY':'NORMAL';
+  return {verdict,anomaly_score:score,probability:verdict==='LEAK_DETECTED'?.92:.95,
+    recommended_action:verdict==='LEAK_DETECTED'?'Dispatch repair team immediately!':'No action needed.',
+    alert_message:`Pressure ${b.pressure_bar} bar, flow ${b.flow_lps} L/s, turbidity ${b.turbidity}. Score: ${score}%.`,
+    justification:`Pressure ${b.pressure_bar} bar, flow ${b.flow_lps} L/s. Anomaly score: ${score}%.`};
+}
+
+// ════════════════════════════════════════════════════════════
+// FLOOD PREDICTION
+// ════════════════════════════════════════════════════════════
+async function runFloodPrediction() {
+  loading('flood-result');
+  const body = {
+    monsoon_intensity:   parseFloat(document.getElementById('fl-mon').value),
+    topography_drainage: parseFloat(document.getElementById('fl-drn').value),
+    river_management:    parseFloat(document.getElementById('fl-riv').value),
+    deforestation:       parseFloat(document.getElementById('fl-def').value),
+  };
+  const data = await apiCall('/predict/flood','POST',body) || mockFlood(body);
+  const el = document.getElementById('flood-result');
+  const risk = data.risk_level||'LOW';
+  const cls = risk==='CRITICAL'||risk==='HIGH'?'danger':risk==='MODERATE'?'warning':'success';
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd ${cls}">
+        <div class="result-title">🌊 Flood Risk: ${risk} (${data.flood_probability||0}%)</div>
+      </div>
+      <div class="result-body">
+        <div class="mrow"><span class="mkey">Probability</span><span class="mval ${cls}">${data.flood_probability||0}%</span></div>
+        <div class="mrow"><span class="mkey">Pipeline Stress</span><span class="mval am">${data.pipeline_stress_probability||0}%</span></div>
+        <div class="mrow"><span class="mkey">Leak Likelihood</span><span class="mval am">${data.leak_likelihood_during_rain||0}%</span></div>
+        <div class="mrow"><span class="mkey">Recommendation</span><span class="mval" style="font-size:11px">${esc(data.recommendation||'')}</span></div>
+        ${(data.smart_alerts||[]).map(a=>`<div class="alert warning"><span class="alert-icon">⚠️</span><span style="font-size:12px">${esc(a)}</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function mockFlood(b) {
+  const score = Math.round(Math.min(100,Math.max(0,(b.monsoon_intensity*.4+(10-b.topography_drainage)*.25+(10-b.river_management)*.2+b.deforestation*.15)*10)));
+  const risk = score<30?'LOW':score<60?'MODERATE':score<80?'HIGH':'CRITICAL';
+  return {flood_probability:score,risk_level:risk,pipeline_stress_probability:Math.round(score*.9+b.monsoon_intensity*2),leak_likelihood_during_rain:Math.round(score*.76),recommendation:'Continue enhanced monitoring.',smart_alerts:score>40?['💧 Increase pipeline monitoring sensitivity.']:[]};
+}
+
+// ════════════════════════════════════════════════════════════
+// WATER QUALITY
+// ════════════════════════════════════════════════════════════
+async function runQualityCheck() {
+  loading('quality-result');
+  const body = {
+    ph:        parseFloat(document.getElementById('q-ph').value),
+    solids:    parseFloat(document.getElementById('q-tds').value),
+    turbidity: parseFloat(document.getElementById('q-turb').value),
+    hardness:  parseFloat(document.getElementById('q-hard').value),
+  };
+  const data = await apiCall('/predict/potability','POST',body) || mockQuality(body);
+  const el = document.getElementById('quality-result');
+  const cls = data.potable?'success':'danger';
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd ${cls}">
+        <div class="result-title">${data.verdict||'Analysed'}</div>
+      </div>
+      <div class="result-body">
+        <div class="mrow"><span class="mkey">pH</span><span class="mval ${body.ph>=6.5&&body.ph<=8.5?'gn':'rd'}">${body.ph}</span></div>
+        <div class="mrow"><span class="mkey">TDS (Solids)</span><span class="mval ${body.solids<=500?'gn':'rd'}">${body.solids} mg/L</span></div>
+        <div class="mrow"><span class="mkey">Turbidity</span><span class="mval ${body.turbidity<=5?'gn':'rd'}">${body.turbidity} NTU</span></div>
+        <div class="mrow"><span class="mkey">Confidence</span><span class="mval">${((data.confidence||0.91)*100).toFixed(0)}%</span></div>
+        ${(data.issues||[]).length?`<div class="alert danger" style="margin-top:8px"><span class="alert-icon">⚠️</span><div>${(data.issues||[]).map(i=>`<div style="font-size:12px">${esc(i)}</div>`).join('')}</div></div>`:'<div class="alert success" style="margin-top:8px"><span class="alert-icon">✅</span>All parameters within safe limits.</div>'}
+        <div class="mrow"><span class="mkey">Action</span><span class="mval" style="font-size:12px">${esc(data.recommendation||'')}</span></div>
+      </div>
+    </div>`;
+}
+
+function mockQuality(b) {
+  const safe = (b.ph>=6.5&&b.ph<=8.5)&&b.solids<=500&&b.turbidity<=5;
+  const issues = [];
+  if(!(b.ph>=6.5&&b.ph<=8.5)) issues.push(`pH ${b.ph} outside safe 6.5–8.5`);
+  if(b.solids>500) issues.push(`TDS ${b.solids} exceeds 500 mg/L`);
+  if(b.turbidity>5) issues.push(`Turbidity ${b.turbidity} NTU above 5 NTU`);
+  return {potable:safe,verdict:safe?'✅ SAFE TO DRINK':'❌ NOT SAFE',confidence:.91,issues,recommendation:safe?'Water meets potability standards.':'Treatment required.'};
+}
+
+// ════════════════════════════════════════════════════════════
+// FARMER AGENT
+// ════════════════════════════════════════════════════════════
+async function runFarmerAgent() {
+  loading('farmer-result');
+  const body = {
+    zone:         document.getElementById('farm-zone').value,
+    crop:         document.getElementById('farm-crop').value,
+    soil_moisture:parseFloat(document.getElementById('farm-moisture').value),
+    rain_1h:      parseFloat(document.getElementById('farm-rain1').value),
+    rain_6h:      parseFloat(document.getElementById('farm-rain6').value),
+    temperature:  parseFloat(document.getElementById('farm-temp').value),
+  };
+  const data = await apiCall('/farmer/agent','POST',body) || mockFarmer(body);
+  const el = document.getElementById('farmer-result');
+  const leakCls = data.pipe_leak_risk==='HIGH'?'danger':data.pipe_leak_risk==='MEDIUM'?'warning':'success';
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd ${leakCls}"><div class="result-title">🌾 ${body.crop} — ${body.zone}</div></div>
+      <div class="result-body">
+        <div class="mrow"><span class="mkey">Pipe Leak Risk</span><span class="mval ${leakCls}">${data.pipe_leak_risk}</span></div>
+        <div class="mrow"><span class="mkey">Should Irrigate</span><span class="mval ${data.should_irrigate?'gn':'am'}">${data.should_irrigate?'✅ Yes':'⚠️ No'}</span></div>
+        <div class="mrow"><span class="mkey">Water Saved</span><span class="mval gn">${data.water_saved_pct}%</span></div>
+        ${(data.sensor_alerts||[]).map(a=>`<div class="alert warning" style="margin-bottom:5px"><span class="alert-icon">⚠️</span><span style="font-size:12px">${esc(a)}</span></div>`).join('')}
+        ${(data.irrigation_schedule||[]).length?`<div style="margin:10px 0 6px;font-size:11.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Schedule</div>
+        ${(data.irrigation_schedule||[]).map(s=>`<div class="mrow"><span class="mkey">${s.time}</span><span class="mval" style="font-size:12px">${s.volume_l}L — ${s.note||''}</span></div>`).join('')}`:''}
+        ${data.ai_advisory?`<div class="ai-narrative">${esc(data.ai_advisory)}</div>`:''}
+        ${(data.management_tips||[]).map(t=>`<div class="alert info" style="margin-top:5px"><span class="alert-icon">💡</span><span style="font-size:12px">${esc(t)}</span></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function runCropRecommendation() {
+  const el = document.getElementById('crop-result');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Analysing soil parameters…</div>';
+  const body = {
+    N:        parseFloat(document.getElementById('farm-n').value),
+    ph:       parseFloat(document.getElementById('farm-ph').value),
+    rainfall: 200,
+  };
+  const data = await apiCall('/predict/crop','POST',body) || mockCrop(body);
+  el.innerHTML = `
+    <div class="alert success" style="margin-bottom:12px">
+      <span class="alert-icon">${data.emoji||'🌾'}</span>
+      <div><b>Best Match: ${esc(data.recommended_crop)}</b><br>
+        <span style="font-size:11.5px">${esc(data.irrigation_tip||'Use drip irrigation.')}</span></div>
+    </div>
+    <div style="font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Top Recommendations</div>
+    ${(data.recommendations||[]).map((r,i)=>`
+      <div class="mrow">
+        <span class="mkey">${r.emoji||'🌱'} ${r.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text3)">${r.water}</span>
+          <span class="mval bl" style="font-size:12px">${Math.round((r.fit_score||0)*100)}%</span>
+        </div>
+      </div>`).join('')}`;
+}
+
+function mockFarmer(b) {
+  const a = b.soil_moisture>85||(b.soil_moisture>70&&b.rain_1h<1);
+  const r = b.soil_moisture>90?'HIGH':a?'MEDIUM':'LOW';
+  const irr = b.soil_moisture<40&&b.rain_6h<5&&b.temperature>25;
+  const avoid = b.rain_1h>3||b.rain_6h>20;
+  return {pipe_leak_risk:r,should_irrigate:irr&&!avoid,water_saved_pct:Math.round(Math.min(40,Math.max(0,(b.soil_moisture-40)*.5+b.rain_6h*.2))),sensor_alerts:avoid?[`🌧️ Skip irrigation — ${b.rain_1h+b.rain_6h}mm rain.`]:[],management_tips:['🕐 Best: Early morning 5–7AM — reduces evaporation ~30%.','💦 Use drip irrigation — saves 35% water.'],irrigation_schedule:irr&&!avoid?[{time:'06:00 AM',volume_l:150,note:'Morning irrigation'},{time:'04:00 PM',volume_l:150,note:'Evening top-up'}]:[{time:'07:00 AM',volume_l:50,note:'Light misting only'}]};
+}
+
+function mockCrop(b) {
+  const crops = [{name:'Rice',emoji:'🌾',N:[60,120],pH:[5.5,7.0],water:'450L/day',season:'Kharif'},{name:'Wheat',emoji:'🌿',N:[80,140],pH:[6,7.5],water:'180L/day',season:'Rabi'},{name:'Tomato',emoji:'🍅',N:[50,90],pH:[6,7],water:'200L/day',season:'Rabi'},{name:'Coffee',emoji:'☕',N:[20,60],pH:[5,6.5],water:'300L/day',season:'Year-round'}];
+  const scored = crops.map(c=>({...c,fit_score:((b.N>=c.N[0]&&b.N<=c.N[1]?3:0)+(b.ph>=c.pH[0]&&b.ph<=c.pH[1]?3:0)+2)/8})).sort((a,c)=>c.fit_score-a.fit_score);
+  return {recommended_crop:scored[0].name,emoji:scored[0].emoji,irrigation_tip:`Use drip irrigation for ${scored[0].name} to save 30% water.`,recommendations:scored.map(c=>({...c,water:c.water,season:c.season}))};
+}
+
+// ════════════════════════════════════════════════════════════
+// ALL AGENTS
+// ════════════════════════════════════════════════════════════
+async function runAllAgents() {
+  const btn = document.querySelector('.tbar-btn.primary');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Running…'; }
+
+  // Animate agent cards
+  ['agent-prediction','agent-leak','agent-decision','agent-redistrib'].forEach(id => {
+    const card = document.getElementById(id);
+    if (card) {
+      const status = card.querySelector('.agent-status');
+      const body = card.querySelector('.agent-body');
+      if (status) { status.textContent='RUNNING'; status.className='agent-status warn'; }
+      if (body) body.innerHTML='<div class="loading"><div class="spinner"></div>Processing…</div>';
+    }
+  });
+
+  const weather = { temp:28, humidity:78, rain_1h:2.4, description:'thunderstorm with rain' };
+  const data = await apiCall('/agents/run','POST',{weather, zones: ZONES_MOCK}) || mockAllAgents();
+
+  renderAgentCard('agent-prediction','🌤️','Prediction Agent','blue',data.prediction_agent);
+  renderAgentCard('agent-leak','🚨','Leak Detection Agent','red',data.leak_agent);
+  renderAgentCard('agent-decision','⚡','Decision Agent','amber',data.decision_agent);
+  renderAgentCard('agent-redistrib','⚖️','Redistribution Agent','green',data.redistribution);
+
+  if (btn) { btn.disabled=false; btn.textContent='🤖 Run Agents'; }
+}
+
+function renderAgentCard(id, icon, name, colorCls, result) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const alertLevel = result?.alert_level || result?.summary_alert || 'OK';
+  const statusCls = alertLevel==='CRITICAL'?'crit':alertLevel==='WARNING'||alertLevel==='WARN'?'warn':'ok';
+  const statusTxt = alertLevel==='CRITICAL'?'CRITICAL':alertLevel==='WARNING'?'WARNING':'ACTIVE';
+
+  let bodyHtml = '';
+  if (result?.flood_forecast) {
+    bodyHtml = `<div class="mrow"><span class="mkey">Flood Risk</span><span class="mval am">${result.flood_forecast.risk_level} (${result.flood_forecast.flood_probability}%)</span></div>
+      <div class="mrow"><span class="mkey">Demand</span><span class="mval">${result.demand_forecast?.demand_level||'—'}</span></div>`;
+    if (result.ai_narrative) bodyHtml += `<div class="ai-narrative">${esc(result.ai_narrative)}</div>`;
+  } else if (result?.total_leaks !== undefined) {
+    bodyHtml = `<div class="mrow"><span class="mkey">Total Leaks</span><span class="mval rd">${result.total_leaks}</span></div>
+      <div class="mrow"><span class="mkey">Critical</span><span class="mval rd">${result.critical||0}</span></div>`;
+  } else if (result?.equity_score !== undefined && result?.transfers) {
+    bodyHtml = `<div class="mrow"><span class="mkey">Equity Score</span><span class="mval gn">${((result.equity_score||0)*100).toFixed(0)}%</span></div>
+      <div class="mrow"><span class="mkey">Transfers</span><span class="mval bl">${result.transfers?.length||0}</span></div>`;
+    if (result.explanation) bodyHtml += `<div style="font-size:11.5px;color:var(--text3);margin-top:6px;line-height:1.5">${esc(result.explanation)}</div>`;
+  } else if (result?.recommendations) {
+    bodyHtml = `<div class="mrow"><span class="mkey">Alert Level</span><span class="mval ${statusCls==='crit'?'rd':statusCls==='warn'?'am':'gn'}">${alertLevel}</span></div>
+      <div class="mrow"><span class="mkey">Actions</span><span class="mval">${result.recommendations?.length||0}</span></div>`;
+    if (result.ai_summary) bodyHtml += `<div class="ai-narrative">${esc(result.ai_summary)}</div>`;
+    else if (result.summary) bodyHtml += `<div style="font-size:11.5px;color:var(--text3);margin-top:6px;line-height:1.5">${esc(result.summary)}</div>`;
+  } else {
+    bodyHtml = `<div style="font-size:12px;color:var(--text3)">${esc(result?.summary||result?.explanation||'Agent output received.')}</div>`;
+  }
+
+  card.innerHTML = `
+    <div class="agent-hd">
+      <div class="agent-icon ${colorCls}">${icon}</div>
+      <div class="agent-name">${name}</div>
+      <div class="agent-status ${statusCls}">${statusTxt}</div>
+    </div>
+    <div class="agent-body">${bodyHtml}</div>`;
+}
+
+function mockAllAgents() {
+  return {
+    prediction_agent:{agent:'Prediction Agent',flood_forecast:{risk_level:'MODERATE',flood_probability:42},demand_forecast:{demand_level:'High',predicted_demand_l_day:1050},proactive_alerts:['🌧️ Heavy rain expected — sensitivity HIGH.'],ai_narrative:'Pipeline stress elevated. Pre-position tankers in low-lying zones.'},
+    leak_agent:{agent:'Leak Detection Agent',total_leaks:4,critical:2,high:2,details:[]},
+    decision_agent:{agent:'Decision Agent',alert_level:'WARNING',recommendations:[{action:'DISPATCH_REPAIR_TEAM',zone:'Koramangala',priority:'CRITICAL'}],equity_score:.84,summary:'WARNING: 4 leaks, 2 overconsumption events. 3 transfers planned. Equity: 84%.'},
+    redistribution:{transfers:[{from_zone:'Z4',to_zone:'Z1',volume_l:45000,reason:'LEAK detected',priority:'CRITICAL'}],equity_score:.84,explanation:'Population-proportional redistribution. 3 transfers planned. Equity: 84%.'},
+  };
+}
+
+function clearAgentResults() {
+  ['agent-prediction','agent-leak','agent-decision','agent-redistrib'].forEach(id => {
+    const card = document.getElementById(id);
+    if (card) {
+      const status = card.querySelector('.agent-status');
+      const body = card.querySelector('.agent-body');
+      if (status) { status.textContent='READY'; status.className='agent-status ok'; }
+      if (body) body.innerHTML=`<div style="color:var(--text3);font-size:12px">Agent ready. Click "Run All Agents" to execute.</div>`;
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// SERVICES & COMPLAINTS
+// ════════════════════════════════════════════════════════════
+async function bookService() {
+  loading('svc-result');
+  const body = {
+    service_type: document.getElementById('svc-type').value,
+    zone:         document.getElementById('svc-zone').value,
+    address:      document.getElementById('svc-addr').value||'Not provided',
+    contact:      document.getElementById('svc-contact').value||'Not provided',
+    priority:     document.getElementById('svc-priority').value,
+  };
+  const data = await apiCall('/services/book','POST',body);
+  const el = document.getElementById('svc-result');
+  const tid = data?.ticket_id || ('BK-'+(2000+Math.floor(Math.random()*999)));
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd success"><div class="result-title">✅ Booking Confirmed</div></div>
+      <div class="result-body">
+        <div class="ticket-box"><div class="ticket-id">${tid}</div><div class="ticket-label">Save this Ticket ID</div></div>
+        <div style="margin-top:12px">
+          <div class="mrow"><span class="mkey">Service</span><span class="mval">${esc(body.service_type)}</span></div>
+          <div class="mrow"><span class="mkey">Zone</span><span class="mval">${esc(body.zone)}</span></div>
+          <div class="mrow"><span class="mkey">Technician</span><span class="mval">${data?.technician||'BWSSB Team 3'}</span></div>
+          <div class="mrow"><span class="mkey">Est. Wait</span><span class="mval gn">${data?.eta||'4–6 hours'}</span></div>
+        </div>
+        <div class="alert info" style="margin-top:10px"><span class="alert-icon">📱</span>Track status using ticket ID. BWSSB helpline: <b>1916</b></div>
+      </div>
+    </div>`;
+}
+
+async function submitComplaint() {
+  loading('cmp-result');
+  const body = {
+    complaint_type: document.getElementById('cmp-type').value,
+    zone:           document.getElementById('cmp-zone').value,
+    description:    document.getElementById('cmp-desc').value||'No description',
+    contact:        document.getElementById('cmp-contact').value||'Not provided',
+  };
+  const data = await apiCall('/complaints/submit','POST',body);
+  const el = document.getElementById('cmp-result');
+  const tid = data?.ticket_id || ('AQ-'+(2000+Math.floor(Math.random()*999)));
+  el.innerHTML = `
+    <div class="result-panel show">
+      <div class="result-hd info"><div class="result-title">📋 Complaint Filed</div></div>
+      <div class="result-body">
+        <div class="ticket-box"><div class="ticket-id">${tid}</div><div class="ticket-label">Complaint Ticket</div></div>
+        <div class="status-timeline" style="margin-top:14px">
+          <div class="status-step"><div class="status-dot done">✓</div><div class="status-content"><div class="status-title">Filed</div><div class="status-time">Just now</div></div></div>
+          <div class="status-step"><div class="status-dot active">→</div><div class="status-content"><div class="status-title">Under Review</div><div class="status-time">Within 24h</div></div></div>
+          <div class="status-step"><div class="status-dot"></div><div class="status-content"><div class="status-title">In Progress</div><div class="status-time">2–5 days</div></div></div>
+          <div class="status-step"><div class="status-dot"></div><div class="status-content"><div class="status-title">Resolved</div><div class="status-time">TBD</div></div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function trackStatus() {
+  loading('status-result');
+  const id = document.getElementById('status-id').value.trim();
+  if (!id) { document.getElementById('status-result').innerHTML='<div class="result-panel show"><div class="result-hd warning"><div class="result-title">⚠️ Enter a ticket ID</div></div></div>'; return; }
+  const data = await apiCall('/complaints/status/'+id);
+  const el = document.getElementById('status-result');
+  if (!data || data.status==='Not Found') {
+    el.innerHTML=`<div class="result-panel show"><div class="result-hd warning"><div class="result-title">🔎 Not Found</div></div><div class="result-body"><p style="font-size:13px">Ticket <b>${esc(id)}</b> not found. Check the ID and try again.</p></div></div>`;
+    return;
+  }
+  const cls = data.status==='Resolved'?'success':data.status==='Filed'?'info':'warning';
+  el.innerHTML=`<div class="result-panel show"><div class="result-hd ${cls}"><div class="result-title">🎫 ${esc(data.ticket_id)} — ${esc(data.status)}</div></div>
+    <div class="result-body">${Object.entries(data.details||{}).filter(([k])=>!['ticket_id','status'].includes(k)).map(([k,v])=>`<div class="mrow"><span class="mkey">${esc(k.replace(/_/g,' '))}</span><span class="mval" style="font-size:11.5px;max-width:60%">${esc(String(v))}</span></div>`).join('')}</div></div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// SCHEDULE
+// ════════════════════════════════════════════════════════════
+const SCHED_DATA = {
+  'Koramangala':    {time:'06:00–08:00',days:'Mon, Wed, Fri',next:'Tomorrow 6 AM',tankers:3},
+  'Indiranagar':    {time:'07:00–09:00',days:'Tue, Thu, Sat',next:'Today 7 AM',tankers:2},
+  'Whitefield':     {time:'05:00–07:00',days:'Mon, Wed, Fri',next:'Tomorrow 5 AM',tankers:4},
+  'Hebbal':         {time:'08:00–10:30',days:'Daily',next:'Tomorrow 8 AM',tankers:1},
+  'Jayanagar':      {time:'07:30–09:30',days:'Mon, Thu, Sat',next:'Thursday 7:30 AM',tankers:2},
+  'HSR Layout':     {time:'06:30–08:30',days:'Tue, Fri',next:'Friday 6:30 AM',tankers:3},
+  'Marathahalli':   {time:'06:00–08:00',days:'Mon, Wed, Sat',next:'Tomorrow 6 AM',tankers:2},
+  'Yelahanka':      {time:'09:00–11:00',days:'Daily',next:'Tomorrow 9 AM',tankers:1},
+  'Electronic City':{time:'05:30–07:30',days:'Tue, Thu, Sat',next:'⚠️ SHUTDOWN TODAY',tankers:0},
+  'Rajajinagar':    {time:'07:00–09:30',days:'Mon, Wed, Fri, Sun',next:'Tomorrow 7 AM',tankers:2},
+  'BTM Layout':     {time:'06:00–08:00',days:'Mon, Wed, Fri',next:'Tomorrow 6 AM',tankers:3},
+  'Banashankari':   {time:'08:00–10:00',days:'Tue, Thu, Sun',next:'Thursday 8 AM',tankers:1},
+};
+
+function renderSchedule() {
+  const grid = document.getElementById('sched-grid');
+  const tankerTable = document.getElementById('tanker-table');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(SCHED_DATA).map(([zone, s]) => `
+    <div class="sched-card">
+      <div class="sched-zone">${zone}</div>
+      <div class="sched-time">🕐 ${s.time}</div>
+      <div class="sched-days">${s.days}</div>
+      <div class="sched-next">${s.next.includes('⚠️')?'<span style="color:var(--red)">':''} 📅 ${s.next}${s.next.includes('⚠️')?'</span>':''}</div>
+    </div>`).join('');
+  if (tankerTable) {
+    tankerTable.innerHTML = Object.entries(SCHED_DATA).map(([zone,s]) =>
+      `<tr><td><b>${zone}</b></td><td><span style="font-family:'DM Mono',monospace">${s.tankers} 🚛</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">${s.next}</td><td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent)">1916</td></tr>`
+    ).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// CHAT — Multi-language with Cohere AI
+// ════════════════════════════════════════════════════════════
+const FALLBACK_REPLIES = {
+  en:{
+    leak:'🔴 7 active leaks: Koramangala (Critical), Whitefield (High), BTM Layout (High), HSR Layout (Medium). Go to Leak Detection tab for full AI analysis.',
+    flood:'🌊 Flood risk: MODERATE (42%). Heavy rain expected. Pre-position tankers in Koramangala and Whitefield.',
+    tanker:'🚛 42 BWSSB tankers active. Go to Book Services → Water Tanker. Average ETA: 4 hours.',
+    quality:'🧪 BWSSB water: pH 7.2, TDS 310 ppm — Safe ✅. Cauvery Stage 5 within WHO norms.',
+    crop:'🌾 Go to Farmer Insights! Enter soil NPK for AI crop recommendation + irrigation schedule.',
+    schedule:'🕐 Supply: Koramangala 6–8AM, Indiranagar 7–9AM, Whitefield 5–7AM. Check Schedule tab for your zone.',
+    default:'💧 I\'m AquaSphere — BWSSB\'s AI! Ask about leaks, flood risk, water quality, tankers, or supply schedule.',
+  },
+  kn:{
+    leak:'🔴 ಕೊರಮಂಗಲ ಪ್ರದೇಶದಲ್ಲಿ 4 ಸಕ್ರಿಯ ಸೋರಿಕೆಗಳು ಪತ್ತೆಯಾಗಿವೆ. BWSSB ತಂಡವನ್ನು ಕಳುಹಿಸಲಾಗಿದೆ.',
+    flood:'🌧️ ಈ ವಾರ 80mm ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ. ಕಡಿಮೆ ಪ್ರದೇಶಗಳಲ್ಲಿ ಮಳೆ ನೀರು ಕೊಯ್ಲು ಮಾಡಿ!',
+    quality:'💧 BWSSB ನೀರಿನ ಗುಣಮಟ್ಟ: pH 7.2, TDS 310 ppm — ಸುರಕ್ಷಿತ ✅',
+    default:'💧 ನಮಸ್ಕಾರ! AquaSphere ಇಲ್ಲಿದ್ದೇನೆ. ನೀರಿನ ಸಮಸ್ಯೆ, ಸೋರಿಕೆ, ಅಥವಾ ನೀರಾವರಿ ಬಗ್ಗೆ ಕೇಳಿ.',
+  },
+  hi:{
+    leak:'🔴 कोरमंगला में 4 सक्रिय रिसाव। BWSSB मरम्मत दल भेज दिया गया है।',
+    flood:'🌧️ इस सप्ताह 80mm बारिश की उम्मीद। वर्षा जल संचयन करें!',
+    quality:'💧 BWSSB जल: pH 7.2, TDS 310 ppm — सुरक्षित ✅',
+    default:'💧 नमस्ते! AquaSphere यहाँ है। पानी की गुणवत्ता, रिसाव या सिंचाई के बारे में पूछें।',
+  }
+};
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  const lang = document.getElementById('chat-lang').value;
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML += `<div class="chat-msg user">${esc(msg)}</div>`;
+  inp.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const loadId = 'cl-'+Date.now();
+  msgs.innerHTML += `<div class="chat-msg bot" id="${loadId}"><div class="loading"><div class="spinner"></div>AquaSphere thinking…</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const data = await apiCall('/chat','POST',{message:msg,language:lang});
+  const reply = data?.response || getFallback(msg.toLowerCase(), lang);
+  const ai_tag = data?.ai_powered ? '<span style="font-size:9px;background:rgba(26,110,255,.1);color:var(--accent);padding:1px 6px;border-radius:20px;font-family:DM Mono;margin-right:6px">AI</span>' : '';
+  document.getElementById(loadId).innerHTML = ai_tag + reply;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function getFallback(t, lang) {
+  const r = FALLBACK_REPLIES[lang] || FALLBACK_REPLIES.en;
+  if (t.includes('leak')||t.includes('ಸೋರಿಕೆ')||t.includes('रिसाव')) return r.leak;
+  if (t.includes('flood')||t.includes('ಮಳೆ')||t.includes('बारिश')) return r.flood||r.default;
+  if (t.includes('quality')||t.includes('ನೀರು')||t.includes('पानी')||t.includes('drink')) return r.quality||r.default;
+  if (t.includes('tanker')||t.includes('book')) return r.tanker||r.default;
+  if (t.includes('crop')||t.includes('farm')) return r.crop||r.default;
+  if (t.includes('schedule')||t.includes('supply')) return r.schedule||r.default;
+  return r.default;
+}
+
+function askQuick(q) {
+  document.getElementById('chat-input').value = q;
+  sendChat();
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+// Slider bindings
+['leak-pres','leak-pv','leak-flow','leak-fv','leak-turb','leak-tv',
+ 'fl-mon','fl-mv','fl-drn','fl-dv','fl-riv','fl-rv','fl-def','fl-dfv',
+ 'farm-moisture','farm-mv'].forEach((id,i,arr) => {
+  if (i % 2 === 0) {
+    const input = document.getElementById(id);
+    const display = document.getElementById(arr[i+1]);
+    if (input && display) input.oninput = function(){ display.textContent = this.value; };
+  }
+});
+
+// Boot
+renderDashChart();
+loadDashboardZones();
+refreshWeather();
+initZoneInputs();
+renderSchedule();
+
+// Auto-run agents on first load (after a brief delay)
+setTimeout(() => runAllAgents(), 1200);
+</script>
+</body>
+</html>
