@@ -1,0 +1,140 @@
+{
+  "results": [
+    {
+      "name": "crop_recommendation",
+      "path": "Crop_recommendation.csv",
+      "target": "label",
+      "task": "classification",
+      "rows": 2200,
+      "features": 7,
+      "model_path": "trained_models/crop_recommendation.joblib",
+      "metrics": {
+        "accuracy": 0.9840909090909091,
+        "f1_weighted": 0.9837367026070493
+      }
+    },
+    {
+      "name": "india_rainfall",
+      "path": "India_rainfall_act_dep_1901_2016_1.csv",
+      "target": "Actual Rainfall: JUN-SEPT",
+      "task": "regression",
+      "rows": 116,
+      "features": 10,
+      "model_path": "trained_models/india_rainfall.joblib",
+      "metrics": {
+        "mae": 25.714363396819554,
+        "rmse": 32.394939607900504,
+        "r2": 0.8453417723523509
+      }
+    },
+    {
+      "name": "smart_city_index",
+      "path": "Smart_City_index_headers.csv",
+      "target": "SmartCity_Index",
+      "task": "regression",
+      "rows": 102,
+      "features": 8,
+      "model_path": "trained_models/smart_city_index.joblib",
+      "metrics": {
+        "mae": 188.05450770654758,
+        "rmse": 241.35704913573335,
+        "r2": 0.9029927671977236
+      }
+    },
+    {
+      "name": "cities_literacy",
+      "path": "cities_r2.csv",
+      "target": "effective_literacy_rate_total",
+      "task": "regression",
+      "rows": 493,
+      "features": 22,
+      "model_path": "trained_models/cities_literacy.joblib",
+      "metrics": {
+        "mae": 0.5188033595151953,
+        "rmse": 1.0861645837425031,
+        "r2": 0.9662957826606493
+      }
+    },
+    {
+      "name": "water_leak_status",
+      "path": "water_leak_detection_1000_rows.csv",
+      "target": "Leak Status",
+      "task": "classification",
+      "rows": 1000,
+      "features": 10,
+      "model_path": "trained_models/water_leak_status.joblib",
+      "metrics": {
+        "accuracy": 0.985,
+        "f1_weighted": 0.9805569620253164
+      }
+    },
+    {
+      "name": "water_burst_status",
+      "path": "water_leak_detection_1000_rows.csv",
+      "target": "Burst Status",
+      "task": "classification",
+      "rows": 1000,
+      "features": 10,
+      "model_path": "trained_models/water_burst_status.joblib",
+      "metrics": {
+        "accuracy": 0.99,
+        "f1_weighted": 0.9850251256281406
+      }
+    },
+    {
+      "name": "water_potability",
+      "path": "water_potability.csv",
+      "target": "Potability",
+      "task": "classification",
+      "rows": 3276,
+      "features": 9,
+      "model_path": "trained_models/water_potability.joblib",
+      "metrics": {
+        "accuracy": 0.6524390243902439,
+        "f1_weighted": 0.6266527802452535
+      }
+    },
+    {
+      "name": "weather_condition",
+      "path": "weather_data_extended.csv",
+      "target": "Weather Condition",
+      "task": "classification",
+      "rows": 800,
+      "features": 14,
+      "model_path": "trained_models/weather_condition.joblib",
+      "metrics": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0
+      }
+    },
+    {
+      "name": "flood_small",
+      "path": "archive-5/flood.csv",
+      "target": "FloodProbability",
+      "task": "regression",
+      "rows": 50000,
+      "features": 20,
+      "model_path": "trained_models/flood_small.joblib",
+      "metrics": {
+        "mae": 0.008422490866806985,
+        "rmse": 0.011065412828912427,
+        "r2": 0.9508375243126942
+      }
+    },
+    {
+      "name": "flood_train",
+      "path": "archive-5/train.csv",
+      "target": "FloodProbability",
+      "task": "regression",
+      "rows": 1117957,
+      "features": 20,
+      "model_path": "trained_models/flood_train.joblib",
+      "metrics": {
+        "mae": 0.018492073207127178,
+        "rmse": 0.022793576911409534,
+        "r2": 0.8001184996259078
+      }
+    }
+  ],
+  "failures": []
+}
